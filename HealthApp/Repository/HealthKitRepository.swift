@@ -36,6 +36,42 @@ final class HealthKitRepository: HealthDataRepository {
                                activeKcalGoal: activity.activeKcalGoal)
     }
 
+    func sleepDurationTrend() async -> [DailyMetric] {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return [] }
+        let end = Date()
+        let start = calendar.date(byAdding: .day, value: -30, to: end) ?? end
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictEndDate)
+        do {
+            let nights = aggregateSleep(try await categorySamples(type: sleepType, predicate: predicate))
+            return nights.map { DailyMetric(date: $0.date, value: $0.totalHours.rounded(toPlaces: 1)) }
+        } catch {
+            return []
+        }
+    }
+
+    func activeEnergyTrend() async -> [DailyMetric] {
+        guard let energyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else { return [] }
+        let end = Date()
+        let start = calendar.date(byAdding: .day, value: -30, to: end) ?? end
+        let anchor = calendar.startOfDay(for: start)
+        var interval = DateComponents()
+        interval.day = 1
+        do {
+            let buckets = try await statistics(type: energyType,
+                                               options: .cumulativeSum,
+                                               start: start,
+                                               end: end,
+                                               anchor: anchor,
+                                               interval: interval)
+            return buckets.compactMap { bucket in
+                guard let kcal = bucket.statistics.sumQuantity()?.doubleValue(for: .kilocalorie()) else { return nil }
+                return DailyMetric(date: bucket.startDate, value: kcal.rounded())
+            }
+        } catch {
+            return []
+        }
+    }
+
     func weightSeries(range: TimeRange) async -> [WeightSample] {
         guard let bodyMass = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return [] }
         let end = Date()
@@ -56,6 +92,42 @@ final class HealthKitRepository: HealthDataRepository {
         } catch {
             return []
         }
+    }
+
+    func recentWeightRecords(limit: Int) async -> [WeightSample] {
+        guard let bodyMass = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return [] }
+        let unit = HKUnit.gramUnit(with: .kilo)
+        do {
+            // 按测量结束时间降序取最近 N 条原始记录。
+            let samples = try await quantitySamples(type: bodyMass, predicate: nil, limit: limit, ascending: false)
+            return samples.map { WeightSample(date: $0.endDate, kg: $0.quantity.doubleValue(for: unit)) }
+        } catch {
+            return []
+        }
+    }
+
+    func weightStatistics() async -> WeightStatistics {
+        guard let bodyMass = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return WeightStatistics() }
+        let unit = HKUnit.gramUnit(with: .kilo)
+        let now = Date()
+        let yearStart = calendar.date(from: DateComponents(year: calendar.component(.year, from: now),
+                                                           month: 1, day: 1)) ?? now
+
+        async let latest = quantitySamples(type: bodyMass, predicate: nil, limit: 1, ascending: false)
+        async let yearStats = weightExtremes(type: bodyMass, start: yearStart, end: now, unit: unit)
+        async let allStats = weightExtremes(type: bodyMass, start: Date.distantPast, end: now, unit: unit)
+
+        let current = (try? await latest)?.first?.quantity.doubleValue(for: unit)
+        let (yearLow, yearHigh) = (try? await yearStats) ?? (nil, nil)
+        let (allLow, allHigh) = (try? await allStats) ?? (nil, nil)
+
+        return WeightStatistics(
+            current: current?.rounded(toPlaces: 1),
+            yearHigh: yearHigh?.rounded(toPlaces: 1),
+            yearLow: yearLow?.rounded(toPlaces: 1),
+            allTimeHigh: allHigh?.rounded(toPlaces: 1),
+            allTimeLow: allLow?.rounded(toPlaces: 1)
+        )
     }
 
     func sleepSeries(range: TimeRange) async -> [SleepSample] {
@@ -229,13 +301,18 @@ private extension HealthKitRepository {
         let start: Date
 
         switch range {
+        // 周 / 月：日级分桶，由趋势图按 7 天 / 30 天窗口滑动取景。
         case .week:
-            interval.weekOfYear = 1
-            start = calendar.date(byAdding: .weekOfYear, value: -26, to: end) ?? end
+            interval.day = 1
+            start = calendar.date(byAdding: .weekOfYear, value: -12, to: end) ?? end
         case .month:
-            interval.month = 1
+            interval.day = 1
             start = calendar.date(byAdding: .month, value: -12, to: end) ?? end
-        case .year, .all:
+        // 年：月级分桶，按 12 个月窗口滑动。
+        case .year:
+            interval.month = 1
+            start = calendar.date(byAdding: .year, value: -3, to: end) ?? end
+        case .all:
             interval.year = 1
             start = calendar.date(from: DateComponents(year: 2019, month: 1, day: 1)) ?? end
         }
@@ -280,6 +357,49 @@ private extension HealthKitRepository {
                                                      statistics: statistics))
                 }
                 continuation.resume(returning: buckets)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// 原始数值样本查询（按 endDate 排序，可限制条数）。
+    func quantitySamples(type: HKQuantityType,
+                         predicate: NSPredicate?,
+                         limit: Int,
+                         ascending: Bool) async throws -> [HKQuantitySample] {
+        try await withCheckedThrowingContinuation { continuation in
+            let sort = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let query = HKSampleQuery(sampleType: type,
+                                      predicate: predicate,
+                                      limit: limit,
+                                      sortDescriptors: [sort]) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: samples as? [HKQuantitySample] ?? [])
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// 区间内体重最小 / 最大值（kg），通过单次离散统计查询一并取回。
+    func weightExtremes(type: HKQuantityType,
+                        start: Date,
+                        end: Date,
+                        unit: HKUnit) async throws -> (min: Double?, max: Double?) {
+        try await withCheckedThrowingContinuation { continuation in
+            let predicate = HKQuery.predicateForSamples(withStart: start, end: end)
+            let query = HKStatisticsQuery(quantityType: type,
+                                          quantitySamplePredicate: predicate,
+                                          options: [.discreteMin, .discreteMax]) { _, statistics, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                let minValue = statistics?.minimumQuantity()?.doubleValue(for: unit)
+                let maxValue = statistics?.maximumQuantity()?.doubleValue(for: unit)
+                continuation.resume(returning: (minValue, maxValue))
             }
             healthStore.execute(query)
         }

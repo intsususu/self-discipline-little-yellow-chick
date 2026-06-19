@@ -10,11 +10,14 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 14) {
+            VStack(spacing: 12) {
                 topBar
+                if Self.isSunday {
+                    weeklySummaryCard
+                }
                 heroCard
-                ringsCard
-                insightCard
+                sleepCard
+                exerciseCard
                 recentEventsCard
             }
             .padding(.horizontal, 16)
@@ -53,26 +56,23 @@ struct HomeView: View {
             appState.selectedTab = .weight
         } label: {
             CardView(background: .weightCardBg) {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("当前体重")
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("最新体重")
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.textSecondary)
                             HStack(alignment: .firstTextBaseline, spacing: 4) {
                                 Text(Self.weightString(vm.stats?.current))
-                                    .font(.system(size: 40, weight: .black))
+                                    .font(.system(size: 32, weight: .black))
                                     .foregroundColor(.brandBlue)
                                 Text("kg")
-                                    .font(.system(size: 16, weight: .bold))
+                                    .font(.system(size: 15, weight: .bold))
                                     .foregroundColor(.brandBlue.opacity(0.7))
                             }
                         }
                         Spacer()
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("最近30次 \(Self.deltaString(vm.stats?.recentDelta))")
-                            Text("累计 \(Self.signedString(vm.stats?.cumulativeChange))")
-                        }
+                        Text("最近30日 \(Self.deltaString(vm.stats?.recentDelta))")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.successGreen)
                     }
@@ -100,36 +100,91 @@ struct HomeView: View {
         return "距目标 \(goal)kg · 还差 \(Self.weightString(dist))kg"
     }
 
-    // MARK: - 3 圆环指标卡
+    // MARK: - 睡眠指标卡（与体重卡同款，靛蓝主题）
 
-    private var ringsCard: some View {
-        let m = vm.ringMetrics
-        return CardView {
-            HStack(spacing: 0) {
-                RingMetric(value: String(format: "%.1f", m.sleepHours), unit: "h",
-                           label: "睡眠", progress: Self.ringProgress(m.sleepHours, m.sleepGoalHours),
-                           color: .sleepIndigo)
-                RingMetric(value: "\(m.exerciseMinutes)", unit: "m",
-                           label: "运动", progress: Self.ringProgress(Double(m.exerciseMinutes), Double(m.exerciseGoalMinutes)),
-                           color: .successGreen)
-                RingMetric(value: "\(m.activeKcal)", unit: "千卡",
-                           label: "卡路里", progress: Self.ringProgress(Double(m.activeKcal), Double(m.activeKcalGoal)),
-                           color: .exerciseOrange)
+    private var sleepCard: some View {
+        let avg = vm.sleepAverage.map { "近30日均 \(String(format: "%.1f", $0))h" } ?? "近30日均 --"
+        return metricCard(
+            title: "今日睡眠时长",
+            value: String(format: "%.1f", vm.ringMetrics.sleepHours),
+            unit: "h",
+            badge: avg,
+            footnote: "最近 30 日睡眠时长趋势",
+            trend: vm.sleepTrend,
+            color: .sleepIndigo,
+            background: .sleepCardBg,
+            tab: .sleep
+        )
+    }
+
+    // MARK: - 运动指标卡（与体重卡同款，橙色主题）
+
+    private var exerciseCard: some View {
+        let avg = vm.energyAverage.map { "近30日均 \(Int($0))千卡" } ?? "近30日均 --"
+        return metricCard(
+            title: "今日活动热量",
+            value: "\(vm.ringMetrics.activeKcal)",
+            unit: "千卡",
+            badge: avg,
+            footnote: "最近 30 日活动热量趋势",
+            trend: vm.energyTrend,
+            color: .exerciseOrange,
+            background: .exerciseCardBg,
+            tab: .exercise
+        )
+    }
+
+    /// 体重卡同款的指标卡：标题 + 大号数值 + 右上角徽标 + 30 日趋势小折线 + 查看趋势。
+    private func metricCard(title: String, value: String, unit: String,
+                            badge: String, footnote: String, trend: [DailyMetric],
+                            color: Color, background: Color, tab: Tab) -> some View {
+        Button {
+            appState.selectedTab = tab
+        } label: {
+            CardView(background: background) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(title)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.textSecondary)
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text(value)
+                                    .font(.system(size: 32, weight: .black))
+                                    .foregroundColor(color)
+                                Text(unit)
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(color.opacity(0.7))
+                            }
+                        }
+                        Spacer()
+                        Text(badge)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(color)
+                    }
+
+                    MetricSparkline(points: trend, color: color)
+
+                    HStack {
+                        Text(footnote)
+                            .font(.system(size: 13))
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                        Text("查看趋势 ›")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(color)
+                    }
+                }
             }
         }
+        .buttonStyle(.plain)
     }
 
-    /// 环进度：值/目标，夹在 [0, 1]（达标即满环，避免目标为 0 时除零）。
-    private static func ringProgress(_ value: Double, _ goal: Double) -> Double {
-        guard goal > 0 else { return 0 }
-        return min(1, max(0, value / goal))
-    }
+    // MARK: - 本周小结卡（仅周日展示，置顶；内容暂为模拟）
 
-    // MARK: - 关联洞察卡（虚线框）
-
-    private var insightCard: some View {
+    private var weeklySummaryCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("本周亮点")
+            Text("本周小结")
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.textPrimary)
             Text("体重连续 4 周下降，运动负荷与睡眠时长同步走高 👍")
@@ -191,6 +246,11 @@ struct HomeView: View {
         return f
     }()
 
+    /// 今天是否为周日（周小结仅在周日置顶展示）。
+    private static var isSunday: Bool {
+        Calendar.current.component(.weekday, from: Date()) == 1
+    }
+
     private static var greeting: String {
         switch Calendar.current.component(.hour, from: Date()) {
         case 0..<6:   return "夜深了"
@@ -213,9 +273,4 @@ struct HomeView: View {
         return "\(arrow)\(String(format: "%.1f", abs(value)))"
     }
 
-    /// 带符号显示，如 -13.9。
-    private static func signedString(_ value: Double?) -> String {
-        guard let value else { return "--" }
-        return String(format: "%.1f", value)
-    }
 }

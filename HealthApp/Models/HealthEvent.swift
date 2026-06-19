@@ -52,6 +52,11 @@ enum EventType: String, CaseIterable, Codable {
         case .other:   return "star.circle"
         }
     }
+
+    /// 是否会直接关联睡眠趋势。`travel` 同时覆盖旅行与出差场景。
+    var isSleepRelated: Bool {
+        self == .drink || self == .travel
+    }
 }
 
 /// 特殊事件：单日（endDate == nil）或时间段（endDate != nil）。

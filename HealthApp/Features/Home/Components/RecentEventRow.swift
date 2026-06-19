@@ -43,6 +43,10 @@ struct RecentEventRow: View {
     static func dateText(for event: HealthEvent) -> String {
         let start = dayFormatter.string(from: event.startDate)
         guard let end = event.endDate else { return start }
-        return "\(start)–\(endDayFormatter.string(from: end))"
+        // 跨月（或跨年）的结束日要带上月份，避免「4月26日–2日」丢掉「5月」。
+        let sameMonth = Calendar(identifier: .gregorian)
+            .isDate(event.startDate, equalTo: end, toGranularity: .month)
+        let endText = (sameMonth ? endDayFormatter : dayFormatter).string(from: end)
+        return "\(start)–\(endText)"
     }
 }

@@ -6,8 +6,12 @@ import SwiftUI
 struct WeightView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = WeightViewModel()
-    @State private var selectedRange: TimeRange = .week
+    @State private var selectedRange: TimeRange = .month
     @State private var showsEvents = true
+    /// 趋势图可视窗口前沿（leading edge）；随手势滑动更新，并驱动右下角事件图例的过滤。
+    @State private var scrollPosition = Date()
+    /// 在图上点选的事件；非空且事件开关打开时，卡片下方展示其详情。
+    @State private var selectedEvent: HealthEvent?
 
     var body: some View {
         NavigationStack {
@@ -15,19 +19,25 @@ struct WeightView: View {
                 VStack(spacing: 14) {
                     rangePicker
                     chartCard
-                    impactCard
+                    eventDetailCard
                     statisticsCard
                     recentRecordsCard
                     insightCard
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
+                .animation(.easeInOut(duration: 0.2), value: selectedEvent)
             }
             .background(Color.appBg.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .task { await viewModel.loadInitialData(from: appState.repository) }
             .task(id: selectedRange) {
+                selectedEvent = nil
                 await viewModel.loadSeries(for: selectedRange, from: appState.repository)
+                resetScrollToLatest()
+            }
+            .onChange(of: showsEvents) { isOn in
+                if !isOn { selectedEvent = nil }
             }
         }
     }
@@ -44,19 +54,25 @@ struct WeightView: View {
     }
 
     private var chartCard: some View {
-        CardView {
+        CardView(background: .weightCardBg) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("体重趋势")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(.textPrimary)
                     Spacer()
-                    Toggle("在图上显示事件", isOn: $showsEvents)
-                        .labelsHidden()
-                        .tint(.brandBlue)
-                    Text("事件")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.textSecondary)
+                    // 文字与开关同属一个 Toggle 标签，点击「事件」文字及其周围均可切换。
+                    Toggle(isOn: $showsEvents) {
+                        Text("事件")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.textSecondary)
+                            .padding(.vertical, 6)
+                            .padding(.trailing, 4)
+                            .contentShape(Rectangle())
+                    }
+                    .tint(.brandBlue)
+                    .fixedSize()
+                    .accessibilityLabel("在图上显示事件")
                 }
 
                 if viewModel.isLoading && viewModel.samples.isEmpty {
@@ -69,10 +85,11 @@ struct WeightView: View {
                         .frame(maxWidth: .infinity, minHeight: 230)
                 } else {
                     WeightChart(samples: viewModel.samples,
-                                goalWeight: appState.goalWeight,
                                 events: appState.events,
                                 showsEvents: showsEvents,
-                                range: selectedRange)
+                                range: selectedRange,
+                                scrollPosition: $scrollPosition,
+                                selectedEvent: $selectedEvent)
                         .frame(height: 230)
                         .animation(.easeInOut(duration: 0.25), value: selectedRange)
                         .animation(.easeInOut(duration: 0.2), value: showsEvents)
@@ -80,7 +97,6 @@ struct WeightView: View {
 
                 HStack(spacing: 14) {
                     legendLine(color: .brandBlue, title: "体重")
-                    legendLine(color: .exerciseOrange, title: "目标", dashed: true)
                     if showsEvents {
                         eventLegend
                     }
@@ -89,37 +105,66 @@ struct WeightView: View {
         }
     }
 
-    private func legendLine(color: Color, title: String, dashed: Bool = false) -> some View {
+    private func legendLine(color: Color, title: String) -> some View {
         HStack(spacing: 5) {
             Rectangle()
                 .fill(color)
-                .frame(width: 16, height: dashed ? 1 : 2)
-                .overlay {
-                    if dashed {
-                        Rectangle().stroke(color, style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
-                    }
-                }
+                .frame(width: 16, height: 2)
             Text(title)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(.textSecondary)
         }
     }
 
+    @ViewBuilder
     private var eventLegend: some View {
-        HStack(spacing: 9) {
-            ForEach(EventType.allCases.filter { $0 != .other }, id: \.self) { type in
-                HStack(spacing: 3) {
-                    RoundedRectangle(cornerRadius: 1)
-                        .fill(type.color)
-                        .frame(width: 7, height: 7)
-                        .rotationEffect(.degrees(45))
-                    Text(legendTitle(for: type))
-                        .font(.system(size: 9, weight: .medium))
-                        .foregroundColor(.textSecondary)
+        let types = windowEventTypes
+        if !types.isEmpty {
+            HStack(spacing: 9) {
+                ForEach(types, id: \.self) { type in
+                    HStack(spacing: 3) {
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(type.color)
+                            .frame(width: 7, height: 7)
+                            .rotationEffect(.degrees(45))
+                        Text(legendTitle(for: type))
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(.textSecondary)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    /// 仅返回当前可视窗口内出现过的事件类型（排除「其他」），按枚举顺序排列。
+    private var windowEventTypes: [EventType] {
+        let window = visibleWindow
+        let present = Set(
+            appState.events
+                .filter { event in
+                    let end = event.endDate ?? event.startDate
+                    return event.startDate <= window.upperBound && end >= window.lowerBound
+                }
+                .map(\.type)
+        ).subtracting([.other])
+        return EventType.allCases.filter { present.contains($0) }
+    }
+
+    /// 当前趋势图可视窗口区间。「全部」无固定窗口，返回全量事件区间。
+    private var visibleWindow: ClosedRange<Date> {
+        guard let seconds = selectedRange.visibleDomainSeconds else {
+            return Date.distantPast...Date.distantFuture
+        }
+        return scrollPosition...scrollPosition.addingTimeInterval(seconds)
+    }
+
+    /// 切换时间范围或重载数据后，把窗口对齐到最新一段（右端贴齐最后样本）。
+    private func resetScrollToLatest() {
+        guard let last = viewModel.samples.map(\.date).max(),
+              let seconds = selectedRange.visibleDomainSeconds else { return }
+        // 右端留出与 WeightChart 同比例的留白，最后一个圆点不再贴边被裁。
+        scrollPosition = last.addingTimeInterval(seconds * WeightChart.trailingPadFactor - seconds)
     }
 
     private func legendTitle(for type: EventType) -> String {
@@ -129,61 +174,73 @@ struct WeightView: View {
         }
     }
 
-    private var impactCard: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "cross.case.fill")
-                .foregroundColor(.eventIllness)
-                .padding(.top, 1)
-            VStack(alignment: .leading, spacing: 3) {
-                Text("5月31日 · 感冒发烧")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.textPrimary)
-                Text("病后一周运动暂停，体重回升 0.6kg。点查看 ›")
-                    .font(.system(size: 12))
-                    .foregroundColor(.textSecondary)
+    /// 事件详情：仅当事件开关打开、且在图上点选了某个事件时展示。
+    @ViewBuilder
+    private var eventDetailCard: some View {
+        if showsEvents, let event = selectedEvent {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: event.type.sfSymbol)
+                    .foregroundColor(event.type.color)
+                    .padding(.top, 1)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("\(Self.eventDateText(for: event)) · \(event.title)")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.textPrimary)
+                    if !event.note.isEmpty {
+                        Text(event.note)
+                            .font(.system(size: 12))
+                            .foregroundColor(.textSecondary)
+                    }
+                }
+                Spacer(minLength: 0)
+                Button {
+                    selectedEvent = nil
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(event.type.color.opacity(0.45))
+                }
+                .buttonStyle(.plain)
             }
-            Spacer(minLength: 0)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(event.type.backgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(event.type.color.opacity(0.22), lineWidth: 1)
+            )
+            .transition(.opacity.combined(with: .move(edge: .top)))
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.eventIllnessBg)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.eventIllness.opacity(0.22), lineWidth: 1)
-        )
     }
 
     private var statisticsCard: some View {
-        CardView {
+        let stats = viewModel.statistics
+        return CardView {
             VStack(alignment: .leading, spacing: 12) {
                 SectionTitle("体重统计")
                 HStack(spacing: 0) {
-                    statistic(title: "当前", value: viewModel.currentWeight, color: .brandBlue)
-                    statistic(title: "累计", value: viewModel.cumulativeChange, color: .successGreen, signed: true)
-                    statistic(title: "历史最低", value: viewModel.historicalLow, color: .textPrimary)
+                    statistic(title: "当前", value: stats.current, color: .brandBlue)
+                    statistic(title: "今年最低", value: stats.yearLow, color: .textPrimary)
+                    statistic(title: "历史最低", value: stats.allTimeLow, color: .textPrimary)
                 }
                 Divider().background(Color.hairline)
-                HStack {
-                    Text("历史最高")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.textSecondary)
-                    Spacer()
-                    Text(Self.weightText(viewModel.historicalHigh) + " kg")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.textPrimary)
+                HStack(spacing: 0) {
+                    statistic(title: "今年最高", value: stats.yearHigh, color: .textPrimary)
+                    statistic(title: "历史最高", value: stats.allTimeHigh, color: .textPrimary)
+                    statistic(title: "累计减少", value: stats.cumulativeLoss, color: .successGreen)
                 }
             }
         }
     }
 
-    private func statistic(title: String, value: Double?, color: Color, signed: Bool = false) -> some View {
+    private func statistic(title: String, value: Double?, color: Color) -> some View {
         VStack(spacing: 5) {
             Text(title)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.textSecondary)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(signed ? Self.signedWeightText(value) : Self.weightText(value))
+                Text(Self.weightText(value))
                     .font(.system(size: 22, weight: .heavy))
                     .foregroundColor(color)
                 Text("kg")
@@ -256,13 +313,14 @@ struct WeightView: View {
         return formatter
     }()
 
+    private static func eventDateText(for event: HealthEvent) -> String {
+        let start = recordDateFormatter.string(from: event.startDate)
+        guard let endDate = event.endDate else { return start }
+        return "\(start)–\(recordDateFormatter.string(from: endDate))"
+    }
+
     private static func weightText(_ value: Double?) -> String {
         guard let value else { return "--" }
         return String(format: "%.1f", value)
-    }
-
-    private static func signedWeightText(_ value: Double?) -> String {
-        guard let value else { return "--" }
-        return String(format: "%+.1f", value)
     }
 }

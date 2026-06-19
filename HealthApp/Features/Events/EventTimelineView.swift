@@ -300,7 +300,11 @@ private struct EventTimelineRow: View {
     static func dateText(for event: HealthEvent) -> String {
         let start = dayFormatter.string(from: event.startDate)
         guard let end = event.endDate else { return start }
-        return "\(start)–\(endDayFormatter.string(from: end)) · \(dayCount(from: event.startDate, to: end))天"
+        // 跨月（或跨年）的结束日要带上月份，避免「4月26日–2日」丢掉「5月」。
+        let sameMonth = Calendar(identifier: .gregorian)
+            .isDate(event.startDate, equalTo: end, toGranularity: .month)
+        let endText = (sameMonth ? endDayFormatter : dayFormatter).string(from: end)
+        return "\(start)–\(endText) · \(dayCount(from: event.startDate, to: end))天"
     }
 
     private static func dayCount(from start: Date, to end: Date) -> Int {

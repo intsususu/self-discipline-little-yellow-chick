@@ -226,32 +226,51 @@ struct ExerciseView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
+    @ViewBuilder
     private var eventImpactCard: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "bandage.fill")
-                .foregroundColor(.eventInjury)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(injuryEventTitle)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.textPrimary)
-                Text("期间运动暂停，周消耗降到平时 1/3。")
-                    .font(.system(size: 12))
-                    .foregroundColor(.textSecondary)
+        if let event = latestInjuryEvent {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: event.type.sfSymbol)
+                    .foregroundColor(event.type.color)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(Self.eventDateText(for: event)) · \(event.title)")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.textPrimary)
+                    if !event.note.isEmpty {
+                        Text(event.note)
+                            .font(.system(size: 12))
+                            .foregroundColor(.textSecondary)
+                    }
+                }
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(event.type.backgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(event.type.color.opacity(0.22), lineWidth: 1)
+            )
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.eventInjuryBg)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.eventInjury.opacity(0.22), lineWidth: 1)
-        )
     }
 
-    private var injuryEventTitle: String {
-        let event = appState.events.first { $0.type == .injury }
-        return event.map { "5月20–27日 · \($0.title)" } ?? "5月20–27日 · 腰肌肉拉伤"
+    private var latestInjuryEvent: HealthEvent? {
+        appState.events
+            .filter { $0.type == .injury }
+            .max { $0.startDate < $1.startDate }
+    }
+
+    private static let eventDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "M月d日"
+        return formatter
+    }()
+
+    private static func eventDateText(for event: HealthEvent) -> String {
+        let start = eventDateFormatter.string(from: event.startDate)
+        guard let endDate = event.endDate else { return start }
+        return "\(start)–\(eventDateFormatter.string(from: endDate))"
     }
 
     private func loadSamples() async {

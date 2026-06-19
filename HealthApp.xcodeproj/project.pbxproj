@@ -43,6 +43,9 @@
 		BF0000000000000000000066 /* EventStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000065 /* EventStore.swift */; };
 		BF0000000000000000000071 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000070 /* Assets.xcassets */; };
 		BF0000000000000000000072 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000073 /* SplashView.swift */; };
+		BF0000000000000000000075 /* DailyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000074 /* DailyMetric.swift */; };
+		BF0000000000000000000077 /* MetricSparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000076 /* MetricSparkline.swift */; };
+		BF0000000000000000000079 /* WeightStatistics.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000078 /* WeightStatistics.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,6 +86,9 @@
 		FE0000000000000000000065 /* EventStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventStore.swift; sourceTree = "<group>"; };
 		FE0000000000000000000070 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FE0000000000000000000073 /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		FE0000000000000000000074 /* DailyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyMetric.swift; sourceTree = "<group>"; };
+		FE0000000000000000000076 /* MetricSparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricSparkline.swift; sourceTree = "<group>"; };
+		FE0000000000000000000078 /* WeightStatistics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightStatistics.swift; sourceTree = "<group>"; };
 		PA0000000000000000000040 /* HealthApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HealthApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -196,6 +202,7 @@
 			children = (
 				FE0000000000000000000011 /* RecentEventRow.swift */,
 				FE0000000000000000000013 /* WeightSparkline.swift */,
+				FE0000000000000000000076 /* MetricSparkline.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -229,6 +236,7 @@
 		6A000000000000000000003E /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				FE0000000000000000000074 /* DailyMetric.swift */,
 				FE0000000000000000000021 /* Double+Rounding.swift */,
 				FE0000000000000000000023 /* ExerciseSample.swift */,
 				FE0000000000000000000025 /* HealthEvent.swift */,
@@ -236,6 +244,7 @@
 				FE0000000000000000000029 /* Summaries.swift */,
 				FE000000000000000000002B /* TimeRange.swift */,
 				FE000000000000000000002D /* WeightSample.swift */,
+				FE0000000000000000000078 /* WeightStatistics.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -370,6 +379,7 @@
 				BF000000000000000000002A /* Summaries.swift in Sources */,
 				BF000000000000000000002C /* TimeRange.swift in Sources */,
 				BF000000000000000000002E /* WeightSample.swift in Sources */,
+				BF0000000000000000000079 /* WeightStatistics.swift in Sources */,
 				BF0000000000000000000030 /* HealthDataRepository.swift in Sources */,
 				BF0000000000000000000032 /* MockHealthRepository.swift in Sources */,
 				BF0000000000000000000052 /* WeightChart.swift in Sources */,
@@ -379,6 +389,8 @@
 				BF000000000000000000005A /* GoalEditSheet.swift in Sources */,
 				BF000000000000000000005C /* HealthKitRepository.swift in Sources */,
 				BF000000000000000000005E /* ImportView.swift in Sources */,
+				BF0000000000000000000075 /* DailyMetric.swift in Sources */,
+				BF0000000000000000000077 /* MetricSparkline.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -435,7 +447,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -489,7 +501,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;

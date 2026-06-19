@@ -31,10 +31,18 @@ extension Color {
     static let exerciseOrange = Color(hex: "#ea580c")  // 运动 / 损伤
     static let successGreen   = Color(hex: "#16a34a")  // 下降趋势、达标
 
+    // MARK: - Apple 健康睡眠阶段
+    static let sleepDeep      = Color(hex: "#5856d6")  // 深度睡眠：紫色
+    static let sleepCore      = Color(hex: "#007aff")  // 核心睡眠：蓝色
+    static let sleepREM       = Color(hex: "#5ac8fa")  // 快速眼动睡眠：浅蓝色
+    static let sleepAwake     = Color(hex: "#ff6b55")  // 清醒时间：橙红色
+
     // MARK: - 背景
     static let appBg          = Color(hex: "#f5f6f8")
     static let cardBg         = Color(hex: "#ffffff")
     static let weightCardBg   = Color(hex: "#eef4fd")  // 体重 hero 卡背景
+    static let sleepCardBg     = Color(hex: "#eef0fd")  // 睡眠 hero 卡背景
+    static let exerciseCardBg  = Color(hex: "#fdf2ec")  // 运动 hero 卡背景
 
     // MARK: - 文字
     static let textPrimary    = Color(hex: "#1a1f29")

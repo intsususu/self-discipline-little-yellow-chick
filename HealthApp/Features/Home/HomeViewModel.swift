@@ -1,41 +1,64 @@
 // HomeViewModel.swift
-// 首页派生指标（混合策略）：体重 current/recentDelta 由周序列计算；
-// 累计、睡眠、运动 hero 数取自 HomeMetricContract（数据契约常量）。
+// 首页派生指标：体重 current/recentDelta 由最近 30 日序列计算；
+// 睡眠、运动 hero 数取自 HomeMetricContract（数据契约常量）。
 
 import SwiftUI
 
 @MainActor
 final class HomeViewModel: ObservableObject {
-    @Published private(set) var weeklyWeights: [WeightSample] = []
+    @Published private(set) var weightHistory: [WeightSample] = []
     @Published private(set) var stats: WeightStats?
-    /// 三圆环当日真实指标（睡眠时长 / 锻炼分钟 / 活动热量及目标）。
+    /// 指标卡当日真实数（睡眠时长 / 锻炼分钟 / 活动热量及目标）。
     @Published private(set) var ringMetrics: HomeRingMetrics = .empty
+    /// 睡眠卡：最近 30 日每日睡眠时长趋势。
+    @Published private(set) var sleepTrend: [DailyMetric] = []
+    /// 运动卡：最近 30 日每日活动热量趋势。
+    @Published private(set) var energyTrend: [DailyMetric] = []
 
     func load(from repository: HealthDataRepository) async {
         async let weeklyTask = repository.weightSeries(range: .week)
         async let ringsTask = repository.homeRingMetrics()
-        let weekly = await weeklyTask
-        weeklyWeights = weekly
-        stats = Self.makeStats(from: weekly)
+        async let sleepTask = repository.sleepDurationTrend()
+        async let energyTask = repository.activeEnergyTrend()
+        let history = await weeklyTask
+        weightHistory = history
+        stats = Self.makeStats(from: history)
         ringMetrics = await ringsTask
+        sleepTrend = await sleepTask
+        energyTrend = await energyTask
     }
 
-    /// 体重统计：当前 = 末点；最近30次 = 末点 − 窗口首点；累计 = 契约常量。
-    static func makeStats(from weekly: [WeightSample]) -> WeightStats? {
-        guard let last = weekly.last else { return nil }
+    /// 最近 30 日睡眠时长日均（小时，保留 1 位）。
+    var sleepAverage: Double? { Self.average(sleepTrend, places: 1) }
+    /// 最近 30 日活动热量日均（千卡，取整）。
+    var energyAverage: Double? { Self.average(energyTrend, places: 0) }
+
+    static func average(_ points: [DailyMetric], places: Int) -> Double? {
+        guard !points.isEmpty else { return nil }
+        let mean = points.reduce(0) { $0 + $1.value } / Double(points.count)
+        return mean.rounded(toPlaces: places)
+    }
+
+    /// 体重统计：当前 = 末点；最近 30 日变化 = 末点 − 30 日窗口首点。
+    static func makeStats(from history: [WeightSample]) -> WeightStats? {
+        guard let last = history.last else { return nil }
         let current = last.kg.rounded(toPlaces: 1)
-        let window = recent30(from: weekly)
+        let window = recent30Days(from: history)
         let recentDelta = window.first.map { (last.kg - $0.kg).rounded(toPlaces: 1) } ?? 0
         return WeightStats(current: current,
                            recentDelta: recentDelta,
                            cumulativeChange: HomeMetricContract.cumulativeWeightChange)
     }
 
-    /// Hero 卡折线 sparkline 取最近 30 次测量。
-    var sparkline: [WeightSample] { Self.recent30(from: weeklyWeights) }
+    /// Hero 卡折线只展示最近 30 日测量。
+    var sparkline: [WeightSample] { Self.recent30Days(from: weightHistory) }
 
-    /// 最近 30 次测量（不足 30 次则取全部）。
-    static func recent30(from series: [WeightSample]) -> [WeightSample] {
-        Array(series.suffix(30))
+    /// 以最新样本为截止日，保留其前 29 日到截止日的测量。
+    static func recent30Days(from series: [WeightSample], calendar: Calendar = .current) -> [WeightSample] {
+        guard let latestDate = series.last?.date,
+              let startDate = calendar.date(byAdding: .day, value: -29, to: latestDate) else {
+            return series
+        }
+        return series.filter { $0.date >= startDate && $0.date <= latestDate }
     }
 }

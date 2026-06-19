@@ -58,6 +58,8 @@ struct EventEditorView: View {
                 }
             }
         }
+        .environment(\.locale, Locale(identifier: "zh-Hans-CN"))
+        .environment(\.calendar, Self.localizedCalendar)
     }
 
     // MARK: - 类型
@@ -79,9 +81,9 @@ struct EventEditorView: View {
             type = option
         } label: {
             HStack(spacing: 6) {
-                Image(systemName: option.sfSymbol)
+                Image(systemName: editorSymbol(for: option))
                     .font(.system(size: 13, weight: .semibold))
-                Text(option.label)
+                Text(editorLabel(for: option))
                     .font(.system(size: 14, weight: .semibold))
             }
             .frame(maxWidth: .infinity)
@@ -98,6 +100,14 @@ struct EventEditorView: View {
         .animation(.easeInOut(duration: 0.15), value: type)
     }
 
+    private func editorLabel(for option: EventType) -> String {
+        option == .injury ? "出差" : option.label
+    }
+
+    private func editorSymbol(for option: EventType) -> String {
+        option == .injury ? "briefcase.fill" : option.sfSymbol
+    }
+
     // MARK: - 持续切换
 
     private var durationSection: some View {
@@ -112,30 +122,37 @@ struct EventEditorView: View {
 
     // MARK: - 日期
 
-    private let calendar = Calendar(identifier: .gregorian)
-
-    /// 统一日期显示格式：YYYY/MM/DD。
-    private static let slashFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "zh_CN")
-        f.dateFormat = "yyyy/MM/dd"
-        return f
+    private static let localizedCalendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "zh-Hans-CN")
+        return calendar
     }()
+
+    private var calendar: Calendar { Self.localizedCalendar }
 
     private var dateSection: some View {
         fieldGroup(title: isPeriod ? "起止日期" : "日期") {
-            VStack(alignment: .leading, spacing: 12) {
-                dateSummary
-                Divider().background(Color.hairline)
+            VStack(spacing: 0) {
                 if isPeriod {
-                    // 时间段：日历内滑动可多选连续日期范围，起止取所选最早 / 最晚。
-                    MultiDatePicker("起止日期", selection: periodSelection)
-                        .tint(.brandBlue)
+                    compactDatePicker("开始日期", selection: $startDate)
+                        .onChange(of: startDate) { newValue in
+                            if endDate < newValue { endDate = newValue }
+                        }
+                    Divider().background(Color.hairline)
+                    compactDatePicker("结束日期", selection: $endDate, in: startDate...)
+                    Divider().background(Color.hairline)
+                    HStack {
+                        Text("持续天数")
+                        Spacer()
+                        Text("共 \(periodDayCount) 天")
+                            .fontWeight(.semibold)
+                            .foregroundColor(.brandBlue)
+                    }
+                    .font(.system(size: 14))
+                    .foregroundColor(.textSecondary)
+                    .padding(.vertical, 10)
                 } else {
-                    DatePicker("日期", selection: $startDate, displayedComponents: .date)
-                        .datePickerStyle(.graphical)
-                        .labelsHidden()
-                        .tint(.brandBlue)
+                    compactDatePicker("选择日期", selection: $startDate)
                         .onChange(of: startDate) { newValue in
                             if endDate < newValue { endDate = newValue }
                         }
@@ -144,24 +161,29 @@ struct EventEditorView: View {
         }
     }
 
-    private var dateSummary: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "calendar")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.brandBlue)
-            if isPeriod {
-                Text("\(Self.slashFormatter.string(from: startDate)) – \(Self.slashFormatter.string(from: endDate))")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.textPrimary)
-                Text("· \(periodDayCount) 天")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.textSecondary)
-            } else {
-                Text(Self.slashFormatter.string(from: startDate))
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.textPrimary)
-            }
+    private func compactDatePicker(_ label: String,
+                                   selection: Binding<Date>) -> some View {
+        DatePicker(selection: selection, displayedComponents: .date) {
+            Text(label)
+                .font(.system(size: 14))
+                .foregroundColor(.textSecondary)
         }
+        .datePickerStyle(.compact)
+        .tint(.brandBlue)
+        .padding(.vertical, 8)
+    }
+
+    private func compactDatePicker(_ label: String,
+                                   selection: Binding<Date>,
+                                   in range: PartialRangeFrom<Date>) -> some View {
+        DatePicker(selection: selection, in: range, displayedComponents: .date) {
+            Text(label)
+                .font(.system(size: 14))
+                .foregroundColor(.textSecondary)
+        }
+        .datePickerStyle(.compact)
+        .tint(.brandBlue)
+        .padding(.vertical, 8)
     }
 
     private var periodDayCount: Int {
@@ -170,35 +192,11 @@ struct EventEditorView: View {
         return (calendar.dateComponents([.day], from: from, to: to).day ?? 0) + 1
     }
 
-    /// MultiDatePicker 选区 ⇄ 起止日期：读取时铺满 [start, end] 连续区间，回写时取最早 / 最晚为起止。
-    private var periodSelection: Binding<Set<DateComponents>> {
-        Binding(
-            get: {
-                var set: Set<DateComponents> = []
-                var day = calendar.startOfDay(for: min(startDate, endDate))
-                let last = calendar.startOfDay(for: max(startDate, endDate))
-                while day <= last {
-                    set.insert(calendar.dateComponents([.year, .month, .day], from: day))
-                    guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
-                    day = next
-                }
-                return set
-            },
-            set: { newValue in
-                let dates = newValue.compactMap { calendar.date(from: $0) }.sorted()
-                if let first = dates.first, let lastDate = dates.last {
-                    startDate = first
-                    endDate = lastDate
-                }
-            }
-        )
-    }
-
     // MARK: - 标题 / 备注
 
     private var titleSection: some View {
         fieldGroup(title: "标题（可选）") {
-            TextField(type.label, text: $title)
+            TextField(editorLabel(for: type), text: $title)
                 .font(.system(size: 15))
                 .foregroundColor(.textPrimary)
         }
@@ -249,7 +247,7 @@ struct EventEditorView: View {
         let event = HealthEvent(
             id: editingEvent?.id ?? UUID().uuidString,
             type: type,
-            title: trimmedTitle.isEmpty ? type.label : trimmedTitle,
+            title: trimmedTitle.isEmpty ? editorLabel(for: type) : trimmedTitle,
             startDate: startDate,
             endDate: isPeriod ? max(endDate, startDate) : nil,
             note: note.trimmingCharacters(in: .whitespacesAndNewlines)

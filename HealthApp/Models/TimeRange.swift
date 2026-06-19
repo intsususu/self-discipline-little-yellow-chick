@@ -19,4 +19,20 @@ enum TimeRange: String, CaseIterable, Identifiable {
         case .all:   return "全部"
         }
     }
+
+    /// 趋势图可视窗口宽度（天）。仿 Apple 健康：周=7 天、月≈30 天、年≈12 月。
+    /// `nil` 表示不分页，一次展示全部数据（「全部」）。
+    var visibleDomainDays: Int? {
+        switch self {
+        case .week:  return 7
+        case .month: return 30
+        case .year:  return 365
+        case .all:   return nil
+        }
+    }
+
+    /// 可视窗口宽度（秒），用于 Charts 的 `chartXVisibleDomain(length:)`。
+    var visibleDomainSeconds: TimeInterval? {
+        visibleDomainDays.map { Double($0) * 86_400 }
+    }
 }
