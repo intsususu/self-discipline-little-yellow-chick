@@ -271,32 +271,30 @@ private struct EventDateSection: View {
     }
 
     private func datePickerControl(selection: Binding<Date>) -> some View {
-        ZStack {
-            formattedDate(selection.wrappedValue)
-            DatePicker("", selection: selection, displayedComponents: .date)
-                .datePickerStyle(.compact)
-                .labelsHidden()
-                .tint(.brandBlue)
-                .opacity(0.02)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("选择日期")
-        .accessibilityValue(Self.slashFormatter.string(from: selection.wrappedValue))
+        DatePicker("", selection: selection, displayedComponents: .date)
+            .datePickerStyle(.compact)
+            .labelsHidden()
+            .tint(.brandBlue)
+            .accessibilityLabel("选择日期")
+            .accessibilityValue(Self.slashFormatter.string(from: selection.wrappedValue))
+            .overlay {
+                formattedDate(selection.wrappedValue)
+                    .allowsHitTesting(false)
+            }
     }
 
     private func datePickerControl(selection: Binding<Date>,
                                    in range: PartialRangeFrom<Date>) -> some View {
-        ZStack {
-            formattedDate(selection.wrappedValue)
-            DatePicker("", selection: selection, in: range, displayedComponents: .date)
-                .datePickerStyle(.compact)
-                .labelsHidden()
-                .tint(.brandBlue)
-                .opacity(0.02)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("选择日期")
-        .accessibilityValue(Self.slashFormatter.string(from: selection.wrappedValue))
+        DatePicker("", selection: selection, in: range, displayedComponents: .date)
+            .datePickerStyle(.compact)
+            .labelsHidden()
+            .tint(.brandBlue)
+            .accessibilityLabel("选择日期")
+            .accessibilityValue(Self.slashFormatter.string(from: selection.wrappedValue))
+            .overlay {
+                formattedDate(selection.wrappedValue)
+                    .allowsHitTesting(false)
+            }
     }
 
     private func formattedDate(_ date: Date) -> some View {
