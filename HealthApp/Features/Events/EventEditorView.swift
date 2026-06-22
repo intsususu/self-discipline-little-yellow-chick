@@ -204,7 +204,8 @@ struct EventEditorView: View {
             DateRangePickerSection(isPeriod: isPeriod,
                                    startDate: $startDate,
                                    endDate: $endDate,
-                                   calendar: calendar)
+                                   calendar: calendar,
+                                   autoExtendsEndDate: true)
         }
     }
 

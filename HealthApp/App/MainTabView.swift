@@ -6,9 +6,22 @@ import SwiftUI
 struct MainTabView: View {
     @EnvironmentObject private var appState: AppState
 
+    /// 包装 selectedTab：点选的目标等于当前选中项即视为"重选"，递增令牌通知该页回顶部。
+    private var tabSelection: Binding<Tab> {
+        Binding(
+            get: { appState.selectedTab },
+            set: { tab in
+                if tab == appState.selectedTab {
+                    appState.tabReselectToken += 1
+                }
+                appState.selectedTab = tab
+            }
+        )
+    }
+
     var body: some View {
         NavigationStack {
-            TabView(selection: $appState.selectedTab) {
+            TabView(selection: tabSelection) {
                 HomeView()
                     .tabItem { Label("总览", systemImage: "square.grid.2x2") }
                     .tag(Tab.home)

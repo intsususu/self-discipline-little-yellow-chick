@@ -18,9 +18,35 @@ struct ProfileView: View {
     /// 沉浸式渐变高度：顶部主色渐隐到页面底色，约过渡到屏幕中部。
     private let immersiveHeight: CGFloat = 360
 
+    /// 滚动回顶部的锚点 id。
+    private static let topAnchor = "profileTop"
+
     var body: some View {
-        ZStack {
-            NavigationStack {
+        NavigationStack {
+            ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 14) {
+                    // 顶部锚点：再次点选「我的」Tab 时滚动到此处（系统自动回顶在本页失效，手动兜底）。
+                    Color.clear.frame(height: 0).id(Self.topAnchor)
+                    profileHeader
+                    goalCard
+                    dataSettings
+                    privacySettings
+                    aboutSettings
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+            }
+            .onChange(of: appState.tabReselectToken) { _, _ in
+                guard appState.selectedTab == .profile else { return }
+                withAnimation(.easeOut(duration: 0.3)) {
+                    proxy.scrollTo(Self.topAnchor, anchor: .top)
+                }
+            }
+            // 沉浸式渐变作为滚动视图的固定背景（不随内容滚动）。
+            // 关键：ScrollView 必须是 NavigationStack 的根内容，系统才会把它当作 Tab 根
+            // 滚动视图——支持「再次点选当前 Tab 回到顶部」。曾用 ZStack 包裹会令其降级、失效。
+            .background(alignment: .top) {
                 ZStack(alignment: .top) {
                     Color.appBg.ignoresSafeArea()
 
@@ -32,48 +58,37 @@ struct ProfileView: View {
                     .frame(height: immersiveHeight)
                     .frame(maxWidth: .infinity)
                     .ignoresSafeArea(edges: .top)
-
-                    ScrollView {
-                        VStack(spacing: 14) {
-                            profileHeader
-                            goalCard
-                            dataSettings
-                            privacySettings
-                            aboutSettings
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 12)
-                    }
-                }
-                // 根页（count==1）：用统一的手势代理拒绝左缘右滑，避免页面被边缘
-                // 拖动、露出白底；进入数据来源等子页后子页的同款代理会放行返回手势。
-                .background(SwipeBackGestureEnabler())
-                .toolbar(.hidden, for: .navigationBar)
-                .sheet(isPresented: $showsProfileEditor) {
-                    ProfileEditView(store: store)
-                }
-                .sheet(isPresented: $showsGoalEditor) {
-                    GoalEditSheet(goalWeight: appState.goalWeight) { newGoal in
-                        appState.goalWeight = newGoal
-                        appState.showToast("目标体重已更新")
-                    }
-                    .presentationDetents([.medium])
-                }
-                .sheet(isPresented: $showsEventTimeline) {
-                    EventTimelineView()
-                }
-                .sheet(isPresented: $showsAbout) {
-                    AboutView()
-                }
-                .navigationDestination(isPresented: $showsHealthImport) {
-                    // 管理页：可经系统返回按钮与左缘右滑返回；再次点击连接按钮跳转系统设置管理权限。
-                    ImportView(isOnboarding: false)
-                }
-                .task {
-                    let samples = await appState.repository.weightSeries(range: .week)
-                    currentWeight = samples.last?.kg.rounded(toPlaces: 1)
                 }
             }
+            // 根页（count==1）：用统一的手势代理拒绝左缘右滑，避免页面被边缘
+            // 拖动、露出白底；进入数据来源等子页后子页的同款代理会放行返回手势。
+            .background(SwipeBackGestureEnabler())
+            .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showsProfileEditor) {
+                ProfileEditView(store: store)
+            }
+            .sheet(isPresented: $showsGoalEditor) {
+                GoalEditSheet(goalWeight: appState.goalWeight) { newGoal in
+                    appState.goalWeight = newGoal
+                    appState.showToast("目标体重已更新")
+                }
+                .presentationDetents([.medium])
+            }
+            .sheet(isPresented: $showsEventTimeline) {
+                EventTimelineView()
+            }
+            .sheet(isPresented: $showsAbout) {
+                AboutView()
+            }
+            .navigationDestination(isPresented: $showsHealthImport) {
+                // 管理页：可经系统返回按钮与左缘右滑返回；再次点击连接按钮跳转系统设置管理权限。
+                ImportView(isOnboarding: false)
+            }
+            .task {
+                let samples = await appState.repository.weightSeries(range: .week)
+                currentWeight = samples.last?.kg.rounded(toPlaces: 1)
+            }
+            } // ScrollViewReader
         }
     }
 

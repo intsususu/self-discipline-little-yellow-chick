@@ -12,6 +12,9 @@ struct HomeView: View {
         ScrollView {
             VStack(spacing: 12) {
                 topBar
+                    // 顶部栏与首张卡片之间留出更大间距，避免标题区与卡片挤在一起。
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
                 if Self.isSunday, let report = vm.weeklyReport {
                     weeklySummaryCard(report)
                 }
@@ -21,7 +24,7 @@ struct HomeView: View {
                 recentEventsCard
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.bottom, 12)
         }
         .refreshable { await refresh() }
         .background(Color.appBg.ignoresSafeArea())
@@ -47,29 +50,34 @@ struct HomeView: View {
     // MARK: - 顶部栏
 
     private var topBar: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
+        // .bottom 对齐：事件开关下移，与「晚上好，今天」那行齐平，而非贴着顶部日期。
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(Self.dateFormatter.string(from: Date()))
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.textSecondary)
                 Text("\(Self.greeting)，今天")
-                    .font(.system(size: 22, weight: .heavy))
+                    .font(.system(size: 24, weight: .heavy))
                     .foregroundColor(.textPrimary)
             }
-            Spacer()
-            // 趋势图事件叠加的全局开关：原在各趋势卡内，现统一收到首页控制。
-            Toggle(isOn: $appState.showsEvents) {
-                Text("事件")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.textSecondary)
-                    .padding(.vertical, 6)
-                    .padding(.trailing, 4)
-                    .contentShape(Rectangle())
-            }
-            .tint(.brandBlue)
-            .fixedSize()
-            .accessibilityLabel("在趋势图上显示事件")
+            Spacer(minLength: 12)
+            eventsToggle
         }
+    }
+
+    /// 趋势图事件叠加的全局开关：原在各趋势卡内，现统一收到首页控制。
+    /// 与左侧标题区拉开距离；tint 用低饱和灰，开启时不会一坨深蓝抓眼球。
+    private var eventsToggle: some View {
+        Toggle(isOn: $appState.showsEvents) {
+            Text("事件")
+                .font(.system(size: 13, weight: .semibold))
+                // 文字随开关联动：开启品牌蓝（带透明度）、关闭灰。
+                .foregroundColor(appState.showsEvents ? Color.brandBlue.opacity(0.75) : .textSecondary)
+        }
+        // 品牌蓝加透明度：开启时仍是蓝调，但比纯品牌蓝柔和不刺眼。
+        .tint(Color.brandBlue.opacity(0.75))
+        .fixedSize()
+        .accessibilityLabel("在趋势图上显示事件")
     }
 
     // MARK: - 体重 Hero 卡

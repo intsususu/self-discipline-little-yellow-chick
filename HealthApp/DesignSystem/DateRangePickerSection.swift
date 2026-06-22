@@ -13,6 +13,9 @@ struct DateRangePickerSection: View {
     @Binding var startDate: Date
     @Binding var endDate: Date
     let calendar: Calendar
+    /// 选开始日期后是否把结束日期联动为「开始 + 3 天」。
+    /// 仅事件录入需要（新建时间段默认 3 天）；综合分析自行管理区间，不应启用。
+    var autoExtendsEndDate: Bool = false
 
     @State private var activeField: ActiveDateField?
 
@@ -29,6 +32,7 @@ struct DateRangePickerSection: View {
             if isPeriod {
                 dateRow("开始日期", date: startDate, field: .start)
                     .onChange(of: startDate) { _, newValue in
+                        guard autoExtendsEndDate else { return }
                         // 选定开始日期后，结束日期立即联动到开始日期后 3 天。
                         endDate = calendar.date(byAdding: .day, value: 3, to: newValue) ?? newValue
                     }

@@ -15,7 +15,12 @@ final class AppState: ObservableObject {
         static let healthAuthorizationCompleted = "healthAuthorizationCompleted"
         /// 上次运行的 App 版本（"短版本号 (构建号)"），用于检测换版本。
         static let lastRunAppVersion = "lastRunAppVersion"
+        /// 用户设定的目标体重，持久化以跨启动保留。
+        static let goalWeight = "goalWeight"
     }
+
+    /// 目标体重默认值（用户从未设定时使用）。
+    private static let defaultGoalWeight: Double = 73.0
 
     /// 退后台超过此时长，再次进前台时强制重走启动页（回首页 + 重新预热）。
     private let backgroundResetThreshold: TimeInterval = 30 * 60
@@ -33,10 +38,16 @@ final class AppState: ObservableObject {
     @Published private(set) var isInitialLoadComplete = false
 
     /// 启动页最短展示时长，避免数据加载过快导致一闪而过。
-    private let minimumSplashDuration: TimeInterval = 1.4
+    private let minimumSplashDuration: TimeInterval = 0.6
 
     /// 目标体重，默认 73.0，可由「我的」编辑，驱动目标线与「距目标」。
-    @Published var goalWeight: Double = 73.0
+    /// 写入即持久化到 UserDefaults，跨启动保留用户设定。
+    @Published var goalWeight: Double = AppState.defaultGoalWeight {
+        didSet {
+            guard goalWeight != oldValue else { return }
+            userDefaults.set(goalWeight, forKey: StorageKey.goalWeight)
+        }
+    }
 
     /// 事件单一数据源：各页只读它做图表叠加，写入只在事件模块。
     @Published var events: [HealthEvent] = []
@@ -46,6 +57,10 @@ final class AppState: ObservableObject {
 
     /// 当前选中 Tab（供首页 Hero 卡跳转体重页等使用）。
     @Published var selectedTab: Tab = .home
+
+    /// 再次点选「当前已选中」的 Tab 时递增。用于通知该页滚动回顶部——
+    /// 「我的」页因接管了导航手势，系统自带的"双击 Tab 回顶部"失效，靠它兜底。
+    @Published var tabReselectToken = 0
 
     /// 全局 ＋记事件弹窗（E2）的呈现状态（任意 Tab 右上＋ 唤起，新建）。
     @Published var isEventEditorPresented = false
@@ -64,6 +79,10 @@ final class AppState: ObservableObject {
          userDefaults: UserDefaults = .standard) {
         self.repository = repository
         self.userDefaults = userDefaults
+        // 读取用户已保存的目标体重；从未设定则用默认值（didSet 不会因初始赋值触发回写）。
+        if userDefaults.object(forKey: StorageKey.goalWeight) != nil {
+            goalWeight = userDefaults.double(forKey: StorageKey.goalWeight)
+        }
         #if targetEnvironment(simulator)
         // 模拟器：纯 Mock，跳过 Apple 健康授权引导，直接进入主界面。
         isImportPresented = false
@@ -79,7 +98,8 @@ final class AppState: ObservableObject {
         events = await repository.events()
     }
 
-    /// 应用启动流程：加载首页数据 + 预热各趋势页，达到最短展示时长后撤下启动页。
+    /// 应用启动流程：只等首页所需的事件数据 + 最短展示时长即撤下启动页；
+    /// 各趋势页预热改为后台进行，不再阻塞撤屏（首页本就在撤屏后由 HomeView 自行加载）。
     /// 可重入：退后台超时（restartFromSplash）会把门闩重置为 false 后再次调用本方法。
     /// - Parameter refresh: 后台超时回前台时传 true：进程未被杀，内存缓存仍是上次的旧值，
     ///   prewarm 会全部命中旧缓存而空转，必须先清缓存再拉，否则首页显示的是昨天的数据。
@@ -91,11 +111,11 @@ final class AppState: ObservableObject {
             repository.clearCache()
             persistCurrentAppVersion()
         }
-        // 事件（首页/各页叠加所需）与三个趋势页首屏数据并行预热，splash 期间一次拉齐。
-        // 冷启动内存缓存本就为空，prewarm 即等于拉新；回前台则需 refreshCachedData 先清旧缓存。
-        async let events: Void = loadInitialData()
-        async let warm: Void = refresh ? repository.refreshCachedData() : repository.prewarm()
-        _ = await (events, warm)
+        // 启动闸门只等事件（首页/各页叠加所需、本机持久化、很快）。
+        await loadInitialData()
+        // 趋势页预热放后台：不阻塞撤下启动页，点开趋势页时各自命中缓存或补拉。
+        // 回前台（refresh）需先清旧内存缓存再拉，避免命中昨天的值空转。
+        Task { refresh ? await repository.refreshCachedData() : await repository.prewarm() }
         let remaining = minimumSplashDuration - Date().timeIntervalSince(start)
         if remaining > 0 {
             try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
