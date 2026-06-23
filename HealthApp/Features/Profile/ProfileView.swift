@@ -13,6 +13,8 @@ struct ProfileView: View {
     @State private var showsEventTimeline = false
     @State private var showsAbout = false
     @State private var showsHealthImport = false
+    @State private var showsFoodCalorie = false
+    @State private var showsTrainingPlan = false
     @State private var currentWeight: Double?
 
     /// 沉浸式渐变高度：顶部主色渐隐到页面底色，约过渡到屏幕中部。
@@ -31,6 +33,7 @@ struct ProfileView: View {
                     profileHeader
                     goalCard
                     dataSettings
+                    toolsSettings
                     privacySettings
                     aboutSettings
                 }
@@ -83,6 +86,12 @@ struct ProfileView: View {
             .navigationDestination(isPresented: $showsHealthImport) {
                 // 管理页：可经系统返回按钮与左缘右滑返回；再次点击连接按钮跳转系统设置管理权限。
                 ImportView(isOnboarding: false)
+            }
+            .navigationDestination(isPresented: $showsFoodCalorie) {
+                FoodCalorieView()
+            }
+            .navigationDestination(isPresented: $showsTrainingPlan) {
+                TrainingPlanView()
             }
             .task {
                 let samples = await appState.repository.weightSeries(range: .week)
@@ -193,9 +202,23 @@ struct ProfileView: View {
             settingRow(icon: "calendar.badge.clock", title: "事件管理", value: "伤病/出行/饮酒/其他 ›", tint: .brandBlue) {
                 showsEventTimeline = true
             }
-            settingDivider
+        }
+    }
+
+    // MARK: - 小工具（入口占位，功能待后续版本实现）
+
+    private var toolsSettings: some View {
+        settingsGroup(title: "小工具") {
             settingRow(icon: "square.and.arrow.down.fill", title: "体测数据导入", value: "暂未开放 ›", tint: .eventTravel, valueColor: .textMuted) {
                 placeholderToast("体测数据导入")
+            }
+            settingDivider
+            settingRow(icon: "fork.knife", title: "食品热量表", value: "查询 ›", tint: .exerciseOrange) {
+                showsFoodCalorie = true
+            }
+            settingDivider
+            settingRow(icon: "figure.strengthtraining.traditional", title: "训练计划", value: "查看 ›", tint: .brandBlue) {
+                showsTrainingPlan = true
             }
         }
     }
