@@ -43,6 +43,10 @@ final class MockHealthRepository: HealthDataRepository {
         Self.dailyActiveKcalExtended
     }
 
+    func exerciseMinutesDailyTrend() async -> [DailyMetric] {
+        Self.dailyExerciseMinutesExtended
+    }
+
     func basalEnergyDailyTrend() async -> [DailyMetric] {
         Self.dailyBasalKcal
     }
@@ -337,6 +341,7 @@ private extension MockHealthRepository {
     /// 拉伤 / 感冒 / 出差期间整段停训（与 dailyActiveKcalExtended 的低活动区间一致）。
     /// 统计卡仅按所选周期窗口（≤180 天）取近段；更早记录供月度消耗「运动」口径回溯。
     static let recentWorkouts: [WorkoutSession] = makeWorkouts()
+    static let dailyExerciseMinutesExtended: [DailyMetric] = makeDailyExerciseMinutes()
 
     private static func makeWorkouts(calendar: Calendar = .current) -> [WorkoutSession] {
         let end = HealthEvent.date("2026-06-17")
@@ -381,6 +386,16 @@ private extension MockHealthRepository {
             }
         }
         return result
+    }
+
+    private static func makeDailyExerciseMinutes(calendar: Calendar = .current) -> [DailyMetric] {
+        let grouped = Dictionary(grouping: recentWorkouts) { session in
+            calendar.startOfDay(for: session.start)
+        }
+        return grouped.map { day, sessions in
+            DailyMetric(date: day, value: Double(sessions.map(\.minutes).reduce(0, +)))
+        }
+        .sorted { $0.date < $1.date }
     }
 
     /// 各运动类型的典型平均心率（次/分），叠加确定性微幅波动，使统计卡心率非定值。

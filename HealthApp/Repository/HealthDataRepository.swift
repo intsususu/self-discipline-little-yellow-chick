@@ -23,6 +23,9 @@ protocol HealthDataRepository: AnyObject {
     /// 运动页趋势卡：最近 6 个月每日「活动消耗热量」（千卡）。
     /// 与 `activeEnergyTrend`（首页近 30 天）同口径，仅时间跨度更长，供周 / 月 / 6 个月滑动取景。
     func activeEnergyDailyTrend() async -> [DailyMetric]
+    /// 自律打卡：每日主动运动分钟（Apple 健身环「锻炼」分钟 / appleExerciseTime）。
+    /// 用于历史与当日自动运动打卡：自然日累计 >= 30 分钟即自动完成「运动」。
+    func exerciseMinutesDailyTrend() async -> [DailyMetric]
     /// 运动页日均卡：最近 6 个月每日「静息（基础代谢）消耗热量」（千卡）。
     /// 与活动消耗相加即为 Health 中「含静息代谢的总消耗」。
     func basalEnergyDailyTrend() async -> [DailyMetric]

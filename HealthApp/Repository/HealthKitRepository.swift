@@ -96,6 +96,29 @@ final class HealthKitRepository: HealthDataRepository {
         }
     }
 
+    func exerciseMinutesDailyTrend() async -> [DailyMetric] {
+        guard let exerciseType = HKObjectType.quantityType(forIdentifier: .appleExerciseTime) else { return [] }
+        let end = Date()
+        let start = calendar.date(byAdding: .month, value: -24, to: end) ?? end
+        let anchor = calendar.startOfDay(for: start)
+        var interval = DateComponents()
+        interval.day = 1
+        do {
+            let buckets = try await statistics(type: exerciseType,
+                                               options: .cumulativeSum,
+                                               start: start,
+                                               end: end,
+                                               anchor: anchor,
+                                               interval: interval)
+            return buckets.compactMap { bucket in
+                guard let minutes = bucket.statistics.sumQuantity()?.doubleValue(for: .minute()) else { return nil }
+                return DailyMetric(date: bucket.startDate, value: minutes.rounded())
+            }
+        } catch {
+            return []
+        }
+    }
+
     func basalEnergyDailyTrend() async -> [DailyMetric] {
         guard let energyType = HKObjectType.quantityType(forIdentifier: .basalEnergyBurned) else { return [] }
         let end = Date()

@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>自律打卡小组件 Design Prototype</title>
+  <style>
+    :root {
+      --brand-blue: #2563eb;
+      --sleep-indigo: #4f46e5;
+      --exercise-orange: #ea580c;
+      --sleep-deep: #5856d6;
+      --text-primary: #1a1f29;
+      --text-secondary: #6b7280;
+      --text-muted: #9aa1ab;
+      --warning-amber: #ca8a04;
+      --card-bg: #ffffff;
+      --hairline: #ededf0;
+      --app-bg: #f5f6f8;
+      --panel-bg: #fbfbfc;
+      --shadow: 0 20px 54px rgba(26, 31, 41, 0.12), 0 2px 10px rgba(26, 31, 41, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text-primary);
+      background: var(--app-bg);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 34px 0 52px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.12;
+      font-weight: 850;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.55;
+      max-width: 680px;
+    }
+
+    .specs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .spec {
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      color: var(--text-secondary);
+      background: #fff;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .phone {
+      width: 390px;
+      max-width: 100%;
+      min-height: 760px;
+      border-radius: 44px;
+      padding: 18px;
+      background:
+        linear-gradient(145deg, rgba(245, 246, 248, 0.88), rgba(230, 236, 246, 0.92)),
+        linear-gradient(155deg, #b8d6f3 0%, #f3e9f4 48%, #e8f1df 100%);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.86);
+      position: sticky;
+      top: 22px;
+    }
+
+    .phone-status {
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      color: rgba(26, 31, 41, 0.78);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .home-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      padding: 20px 4px 0;
+    }
+
+    .app-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0)),
+        linear-gradient(145deg, #2563eb, #4f46e5);
+      box-shadow: 0 9px 18px rgba(26, 31, 41, 0.12);
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .preview-area {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 18px;
+      margin-top: 14px;
+      justify-items: center;
+    }
+
+    .control-panel,
+    .board-section {
+      background: var(--panel-bg);
+      border: 1px solid rgba(237, 237, 240, 0.9);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 10px 28px rgba(26, 31, 41, 0.05);
+    }
+
+    .control-panel {
+      margin-bottom: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .control-title {
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .segmented {
+      display: inline-flex;
+      padding: 3px;
+      gap: 2px;
+      background: #eef0f4;
+      border-radius: 12px;
+    }
+
+    .segment {
+      appearance: none;
+      border: 0;
+      min-height: 28px;
+      padding: 0 11px;
+      color: var(--text-secondary);
+      background: transparent;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .segment.is-active {
+      color: var(--text-primary);
+      background: #fff;
+      box-shadow: 0 1px 5px rgba(26, 31, 41, 0.1);
+    }
+
+    .live-preview {
+      min-height: 218px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.36)),
+        #edf2f7;
+      border: 1px solid rgba(237, 237, 240, 0.9);
+      border-radius: 18px;
+      padding: 26px 16px;
+    }
+
+    .board {
+      display: grid;
+      gap: 18px;
+    }
+
+    .board-section h2 {
+      margin: 0 0 14px;
+      font-size: 16px;
+      font-weight: 850;
+      letter-spacing: 0;
+    }
+
+    .small-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+
+    .medium-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(338px, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+
+    .sample {
+      display: grid;
+      gap: 8px;
+      justify-items: start;
+    }
+
+    .sample-label {
+      min-height: 22px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 8px;
+      color: var(--text-secondary);
+      background: #fff;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .widget {
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      box-shadow: 0 16px 34px rgba(26, 31, 41, 0.13);
+      isolation: isolate;
+      flex: 0 0 auto;
+    }
+
+    .widget.small {
+      width: 158px;
+      height: 158px;
+    }
+
+    .widget.medium {
+      width: 338px;
+      height: 158px;
+    }
+
+    .widget.image-card {
+      background: var(--card-bg);
+    }
+
+    .widget.image-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: var(--asset);
+      background-repeat: no-repeat;
+      background-size: 129px 129px;
+      /* 右移约卡片尺寸的 10%（158×10%≈16px），并较居中上移一点 */
+      background-position: right -24px top calc(50% - 10px);
+      z-index: -2;
+    }
+
+    .widget.image-card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.96) 0%,
+        rgba(255, 255, 255, 0.78) 26%,
+        rgba(255, 255, 255, 0) 50%);
+      z-index: -1;
+    }
+
+    .widget-content {
+      position: relative;
+      height: 100%;
+      padding: 13px 13px 9px;
+      z-index: 1;
+    }
+
+    .small-body {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .small-time {
+      color: var(--text-secondary);
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .small-title {
+      color: var(--task-tint);
+      font-size: 18px;
+      line-height: 1.08;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .small-warning {
+      margin-top: 3px;
+      color: var(--task-tint);
+      font-size: 9.5px;
+      line-height: 1.1;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .small-total {
+      color: var(--task-tint);
+      font-size: 30px;
+      line-height: 1;
+      font-weight: 920;
+      white-space: nowrap;
+    }
+
+    .check-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      min-height: 25px;
+      padding: 4.5px 10px;
+      border-radius: 999px;
+      border: 1.2px solid color-mix(in srgb, var(--task-tint) 45%, transparent);
+      color: var(--task-tint);
+      background: #fff;
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 900;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.82) inset;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .check-button.is-checked {
+      border-color: color-mix(in srgb, var(--task-tint) 90%, transparent);
+    }
+
+    .check-dot {
+      width: 11px;
+      height: 11px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1.4px solid currentColor;
+      font-size: 7px;
+      line-height: 1;
+    }
+
+    .check-button.is-checked .check-dot {
+      color: #fff;
+      background: var(--task-tint);
+      border-color: var(--task-tint);
+    }
+
+    .week-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      padding: 5px 4px;
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 10px;
+    }
+
+    .week-day {
+      display: grid;
+      gap: 2px;
+      justify-items: center;
+      min-width: 0;
+    }
+
+    .week-label {
+      color: var(--text-secondary);
+      font-size: 8px;
+      line-height: 1;
+      font-weight: 800;
+    }
+
+    .week-cell {
+      width: 15px;
+      height: 15px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1.2px solid rgba(154, 161, 171, 0.5);
+      color: #fff;
+      font-size: 8px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .week-cell.is-today {
+      border-color: var(--task-tint);
+      border-width: 1.8px;
+    }
+
+    .week-cell.is-checked {
+      border-color: var(--task-tint);
+      background: var(--task-tint);
+    }
+
+    .small-spacer-a {
+      flex: 1 1 4px;
+      min-height: 4px;
+    }
+
+    .small-spacer-b {
+      flex: 1 1 6px;
+      min-height: 6px;
+    }
+
+    .small-spacer-c {
+      flex: 1 1 8px;
+      min-height: 8px;
+    }
+
+    .medium-body {
+      height: 100%;
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    /* 右侧：月度日历打卡记录（标题+网格作为整体纵向居中） */
+    .medium-cal {
+      width: 120px;
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .cal-title {
+      color: var(--text-secondary);
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 850;
+    }
+
+    .cal-head,
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+
+    .cal-head span {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 7.5px;
+      line-height: 1;
+      font-weight: 850;
+    }
+
+    .cal-cell {
+      aspect-ratio: 1 / 1;
+      border-radius: 3px;
+      background: rgba(154, 161, 171, 0.16);
+    }
+
+    .cal-cell.is-blank {
+      background: transparent;
+    }
+
+    .cal-cell.is-on {
+      background: var(--task-tint);
+    }
+
+    .cal-cell.is-today {
+      box-shadow: 0 0 0 1.5px var(--task-tint);
+    }
+
+    /* 左侧：复用小号样式的 标题 / 按钮 / 插图 */
+    .medium-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* 中号专属：小鸭插图落在文字与日历之间 */
+    .widget.medium.image-card::before {
+      background-size: 147px 147px;
+      background-position: right 132px center;
+    }
+
+    .widget.medium.image-card::after {
+      background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(255, 255, 255, 0.9) 18%,
+        rgba(255, 255, 255, 0) 40%);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .legend-swatch {
+      width: 9px;
+      height: 9px;
+      border-radius: 3px;
+      background: var(--task-tint);
+    }
+
+    @media (max-width: 920px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        position: relative;
+        top: auto;
+        margin: 0 auto;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        width: min(100vw - 20px, 390px);
+        padding-top: 18px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .specs {
+        justify-content: flex-start;
+      }
+
+      .control-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .segmented {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      .segment {
+        flex: 1 0 auto;
+      }
+
+      .medium-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sample:has(.medium) {
+        overflow-x: auto;
+        width: 100%;
+        padding-bottom: 2px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <h1>自律打卡小组件原型</h1>
+        <p class="subtitle">根据当前 WidgetKit SwiftUI 代码复刻：小号为插图浅色卡；中号沿用小号样式，左侧为标题、按钮与插图，右侧为月度日历打卡记录。状态、文案、时段均来自 `SelfDisciplineWidget` 与共享模型。</p>
+      </div>
+      <div class="specs" aria-label="组件规格">
+        <span class="spec">systemSmall 158×158</span>
+        <span class="spec">systemMedium 338×158</span>
+        <span class="spec">iOS 17 交互式打卡</span>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="phone" aria-label="桌面预览">
+        <div class="phone-status">
+          <span>9:41</span>
+          <span>5G 100%</span>
+        </div>
+        <div class="home-grid" aria-hidden="true">
+          <span class="app-icon">健</span>
+          <span class="app-icon">睡</span>
+          <span class="app-icon">动</span>
+          <span class="app-icon">我</span>
+          <span class="app-icon">卡</span>
+          <span class="app-icon">食</span>
+          <span class="app-icon">练</span>
+          <span class="app-icon">析</span>
+        </div>
+        <div class="preview-area">
+          <div id="phone-small"></div>
+          <div id="phone-medium"></div>
+        </div>
+      </aside>
+
+      <div>
+        <section class="control-panel" aria-label="实时预览控制">
+          <div class="control-row">
+            <div class="control-title">预览状态</div>
+            <div class="segmented" role="tablist" aria-label="切换状态">
+              <button class="segment is-active" data-state="exercise" type="button">运动</button>
+              <button class="segment" data-state="noSnack" type="button">夜宵</button>
+              <button class="segment" data-state="readSleep" type="button">早睡</button>
+              <button class="segment" data-state="neutral" type="button">非时段</button>
+            </div>
+          </div>
+          <div class="control-row">
+            <div class="control-title">尺寸</div>
+            <div class="segmented" role="tablist" aria-label="切换尺寸">
+              <button class="segment is-active" data-family="small" type="button">小号</button>
+              <button class="segment" data-family="medium" type="button">中号</button>
+            </div>
+          </div>
+          <div class="live-preview" id="live-preview"></div>
+        </section>
+
+        <section class="board">
+          <div class="board-section">
+            <h2>小号组件状态</h2>
+            <div class="small-grid" id="small-board"></div>
+            <div class="legend" aria-label="任务颜色">
+              <span class="legend-item" style="--task-tint: var(--exercise-orange);"><span class="legend-swatch"></span>运动</span>
+              <span class="legend-item" style="--task-tint: #16a34a;"><span class="legend-swatch"></span>别吃夜宵</span>
+              <span class="legend-item" style="--task-tint: var(--sleep-indigo);"><span class="legend-swatch"></span>阅读早睡</span>
+            </div>
+          </div>
+
+          <div class="board-section">
+            <h2>中号组件状态</h2>
+            <div class="medium-grid" id="medium-board"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const weekdayLabels = ["一", "二", "三", "四", "五", "六", "日"];
+    // 今日索引（0=周一 … 6=周日），非时段背景与周历今日高亮均依赖它
+    const todayIndex = 4;
+
+    const tasks = {
+      exercise: {
+        key: "exercise",
+        label: "运动",
+        icon: "跑",
+        title: "运动时间",
+        subtitle: "动起来，活力满满",
+        windowText: "11:00–13:00",
+        tint: "#ea580c",
+        gradient: ["#2563eb", "#4f46e5"],
+        asset: "fitness.png",
+        checked: false,
+        warning: true,
+        week: [true, true, false, true, false, false, false]
+      },
+      noSnack: {
+        key: "noSnack",
+        label: "别吃夜宵",
+        icon: "宵",
+        title: "别吃夜宵",
+        subtitle: "管住嘴，睡得更好",
+        windowText: "20:30–22:30",
+        tint: "#16a34a",
+        gradient: ["#5856d6", "#1a1f29"],
+        asset: "yexiao.png",
+        checked: false,
+        warning: false,
+        week: [true, true, true, true, false, false, false]
+      },
+      readSleep: {
+        key: "readSleep",
+        label: "阅读早睡",
+        icon: "书",
+        title: "阅读早睡",
+        subtitle: "放下手机，准备入睡",
+        windowText: "23:30–00:30",
+        tint: "#4f46e5",
+        gradient: ["#4f46e5", "#5856d6"],
+        asset: "night.png",
+        checked: true,
+        warning: false,
+        week: [false, true, true, false, true, false, false]
+      }
+    };
+
+    const neutral = {
+      key: "neutral",
+      label: "非时段",
+      // 非打卡时段：周一~周五用 china.png，周六周日用 superman.png
+      asset: todayIndex >= 5 ? "superman.png" : "china.png",
+      tint: "#9aa1ab",
+      gradient: ["#2563eb", "#4f46e5"],
+      todayCompleted: 2,
+      weekDone: 8,
+      weekExpected: 12,
+      week: [true, true, false, true, true, false, false]
+    };
+
+    const monthRows = [
+      [true, false, true, true, false, true, false, true, false, false, true, false, true, true, false, true, false, true, false, true, true, false, true, false, false, true, false, false, false, true],
+      [false, true, true, true, true, false, true, true, true, false, true, true, false, true, true, true, false, true, true, true, false, true, true, false, true, false, true, false, true, true],
+      [true, true, false, true, false, false, true, true, false, true, true, false, true, false, true, true, false, true, false, true, false, false, true, true, false, true, true, false, true, false]
+    ];
+
+    // 月度日历打卡记录（每个状态一组，约 30 天）
+    const monthData = {
+      exercise: monthRows[0],
+      noSnack: monthRows[1],
+      readSleep: monthRows[2],
+      neutral: monthRows[1]
+    };
+    // 本月第一天落在周三（前置 2 个空格），高亮“今天”为本月第 23 天
+    const monthOffset = 2;
+    const todayMonthDay = 22;
+
+    let selectedState = "exercise";
+    let selectedFamily = "small";
+
+    function styleVars(task) {
+      return `--task-tint: ${task.tint}; --grad-a: ${task.gradient[0]}; --grad-b: ${task.gradient[1]};`;
+    }
+
+    function renderCheckButton(task, checkedOverride) {
+      const checked = typeof checkedOverride === "boolean" ? checkedOverride : task.checked;
+      return `
+        <button class="check-button ${checked ? "is-checked" : ""}" style="--task-tint: ${task.tint};" type="button" aria-pressed="${checked}">
+          <span>打卡</span>
+          <span class="check-dot">${checked ? "✓" : ""}</span>
+        </button>
+      `;
+    }
+
+    function renderWeekRow(task) {
+      return `
+        <div class="week-row" style="--task-tint: ${task.tint};">
+          ${weekdayLabels.map((label, index) => {
+            const checked = task.week[index];
+            return `
+              <div class="week-day">
+                <span class="week-label">${label}</span>
+                <span class="week-cell ${checked ? "is-checked" : ""} ${index === todayIndex ? "is-today" : ""}">${checked ? "✓" : ""}</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderSmall(stateKey, options = {}) {
+      const checkedOverride = options.checked;
+      if (stateKey === "neutral") {
+        return `
+          <article class="widget small image-card" style="--asset: url('${neutral.asset}'); --task-tint: ${neutral.tint};" aria-label="非时段小号自律打卡">
+            <div class="widget-content small-body">
+              <div class="small-time">&nbsp;</div>
+              <div class="small-spacer-a"></div>
+              <div class="small-title" style="color: #9aa1ab;">自律打卡</div>
+              <div class="small-spacer-b"></div>
+              <div class="small-total" style="font-size: 24px;"><span style="color: #15803d;">${neutral.weekDone}</span><span style="color: #9aa1ab;">/${neutral.weekExpected}</span></div>
+              <div class="small-spacer-c"></div>
+              ${renderWeekRow(neutral)}
+            </div>
+          </article>
+        `;
+      }
+
+      const task = tasks[stateKey];
+      return `
+        <article class="widget small image-card" style="--asset: url('${task.asset}'); ${styleVars(task)}" aria-label="${task.label}小号自律打卡">
+          <div class="widget-content small-body">
+            <div class="small-time">${task.windowText}</div>
+            <div class="small-spacer-a"></div>
+            <div class="small-title">${task.title}</div>
+            ${task.warning ? `<div class="small-warning">哥，注意疲劳管理</div>` : ""}
+            <div class="small-spacer-b"></div>
+            ${renderCheckButton(task, checkedOverride)}
+            <div class="small-spacer-c"></div>
+            ${renderWeekRow(task)}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderCalendar(pattern, tint) {
+      const cells = [];
+      for (let i = 0; i < monthOffset; i++) cells.push(`<span class="cal-cell is-blank"></span>`);
+      pattern.forEach((on, day) => {
+        cells.push(`<span class="cal-cell ${on ? "is-on" : ""} ${day === todayMonthDay ? "is-today" : ""}"></span>`);
+      });
+      while (cells.length < 35) cells.push(`<span class="cal-cell is-blank"></span>`);
+      return `
+        <div class="medium-cal" style="--task-tint: ${tint};">
+          <div class="cal-title">本月打卡</div>
+          <div class="cal-head">${weekdayLabels.map(label => `<span>${label}</span>`).join("")}</div>
+          <div class="cal-grid">${cells.join("")}</div>
+        </div>
+      `;
+    }
+
+    function renderMedium(stateKey, options = {}) {
+      const checkedOverride = options.checked;
+      if (stateKey === "neutral") {
+        return `
+          <article class="widget medium image-card" style="--asset: url('${neutral.asset}'); --task-tint: ${neutral.tint};" aria-label="非时段中号自律打卡">
+            <div class="widget-content medium-body">
+              <div class="medium-main">
+                <div class="small-time">&nbsp;</div>
+                <div class="small-spacer-a"></div>
+                <div class="small-title" style="color: #9aa1ab;">自律打卡</div>
+                <div class="small-spacer-b"></div>
+                <div class="small-total" style="font-size: 24px;"><span style="color: #15803d;">${neutral.weekDone}</span><span style="color: #9aa1ab;">/${neutral.weekExpected}</span></div>
+                <div class="small-spacer-c"></div>
+              </div>
+              ${renderCalendar(monthData.neutral, neutral.tint)}
+            </div>
+          </article>
+        `;
+      }
+
+      const task = tasks[stateKey];
+      return `
+        <article class="widget medium image-card" style="--asset: url('${task.asset}'); ${styleVars(task)}" aria-label="${task.label}中号自律打卡">
+          <div class="widget-content medium-body">
+            <div class="medium-main">
+              <div class="small-time">${task.windowText}</div>
+              <div class="small-spacer-a"></div>
+              <div class="small-title">${task.title}</div>
+              ${task.warning ? `<div class="small-warning">哥，注意疲劳管理</div>` : ""}
+              <div class="small-spacer-b"></div>
+              ${renderCheckButton(task, checkedOverride)}
+              <div class="small-spacer-c"></div>
+            </div>
+            ${renderCalendar(monthData[stateKey], task.tint)}
+          </div>
+        </article>
+      `;
+    }
+
+    function sample(label, html) {
+      return `
+        <div class="sample">
+          <span class="sample-label">${label}</span>
+          ${html}
+        </div>
+      `;
+    }
+
+    function renderBoards() {
+      const smallBoard = document.querySelector("#small-board");
+      const mediumBoard = document.querySelector("#medium-board");
+      smallBoard.innerHTML = [
+        sample("11:00 运动时段", renderSmall("exercise")),
+        sample("20:30 夜宵时段", renderSmall("noSnack")),
+        sample("23:30 早睡时段", renderSmall("readSleep")),
+        sample("非打卡时段", renderSmall("neutral"))
+      ].join("");
+
+      mediumBoard.innerHTML = [
+        sample("中号 · 运动时段", renderMedium("exercise")),
+        sample("中号 · 夜宵时段", renderMedium("noSnack")),
+        sample("中号 · 早睡时段", renderMedium("readSleep")),
+        sample("中号 · 非时段", renderMedium("neutral"))
+      ].join("");
+    }
+
+    function renderPreview() {
+      const preview = document.querySelector("#live-preview");
+      preview.innerHTML = selectedFamily === "small"
+        ? renderSmall(selectedState)
+        : renderMedium(selectedState);
+
+      document.querySelector("#phone-small").innerHTML = renderSmall(selectedState, { checked: selectedState === "readSleep" });
+      document.querySelector("#phone-medium").innerHTML = renderMedium(selectedState, { checked: selectedState === "readSleep" });
+    }
+
+    function wireSegments() {
+      document.querySelectorAll("[data-state]").forEach(button => {
+        button.addEventListener("click", () => {
+          selectedState = button.dataset.state;
+          document.querySelectorAll("[data-state]").forEach(item => item.classList.toggle("is-active", item === button));
+          renderPreview();
+        });
+      });
+
+      document.querySelectorAll("[data-family]").forEach(button => {
+        button.addEventListener("click", () => {
+          selectedFamily = button.dataset.family;
+          document.querySelectorAll("[data-family]").forEach(item => item.classList.toggle("is-active", item === button));
+          renderPreview();
+        });
+      });
+
+      document.body.addEventListener("click", event => {
+        const button = event.target.closest(".check-button");
+        if (!button) return;
+        const checked = !button.classList.contains("is-checked");
+        button.classList.toggle("is-checked", checked);
+        button.setAttribute("aria-pressed", checked);
+        button.querySelector(".check-dot").textContent = checked ? "✓" : "";
+      });
+    }
+
+    renderBoards();
+    renderPreview();
+    wireSegments();
+  </script>
+</body>
+</html>

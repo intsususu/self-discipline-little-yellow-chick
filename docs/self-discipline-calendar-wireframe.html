@@ -1,0 +1,1085 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>自律打卡 · 月历编辑线框</title>
+  <style>
+    :root {
+      --brand-blue: #2563eb;
+      --sleep-indigo: #4f46e5;
+      --exercise-orange: #ea580c;
+      --success-green: #16a34a;
+      --complete-pink: #ec4899;
+      --warning-amber: #ca8a04;
+      --app-bg: #f5f6f8;
+      --card-bg: #ffffff;
+      --panel-bg: #fbfbfc;
+      --text-primary: #1a1f29;
+      --text-secondary: #6b7280;
+      --text-muted: #9aa1ab;
+      --hairline: #ededf0;
+      --shadow: 0 18px 48px rgba(26, 31, 41, 0.12), 0 2px 10px rgba(26, 31, 41, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text-primary);
+      background: var(--app-bg);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Noto Sans SC", sans-serif;
+    }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .canvas {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 32px 0 52px;
+    }
+
+    .brief {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .brief h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.15;
+      font-weight: 850;
+      letter-spacing: 0;
+    }
+
+    .brief p {
+      max-width: 680px;
+      margin: 8px 0 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .brief-tags {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .brief-tag {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .phone {
+      width: 390px;
+      max-width: 100%;
+      min-height: 812px;
+      position: sticky;
+      top: 22px;
+      overflow: hidden;
+      border-radius: 42px;
+      background: var(--app-bg);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.82);
+    }
+
+    .status {
+      height: 40px;
+      padding: 12px 22px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(26, 31, 41, 0.8);
+      font-size: 13px;
+      font-weight: 760;
+    }
+
+    .app {
+      height: 772px;
+      overflow: auto;
+      padding: 8px 16px 24px;
+      scrollbar-width: none;
+    }
+
+    .app::-webkit-scrollbar {
+      display: none;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 2px 0 16px;
+    }
+
+    .nav-title {
+      display: grid;
+      gap: 2px;
+    }
+
+    .nav-title strong {
+      font-size: 22px;
+      line-height: 1.18;
+      font-weight: 860;
+      letter-spacing: 0;
+    }
+
+    .nav-title span {
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .icon-button {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--hairline);
+      color: var(--text-primary);
+      font-size: 17px;
+      font-weight: 850;
+      display: grid;
+      place-items: center;
+    }
+
+    .today-card,
+    .calendar-card,
+    .editor-sheet {
+      background: var(--card-bg);
+      border: 1px solid rgba(237, 237, 240, 0.95);
+      border-radius: 18px;
+      box-shadow: 0 8px 20px rgba(26, 31, 41, 0.04);
+    }
+
+    .today-card {
+      padding: 14px;
+      margin-bottom: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .today-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .today-copy {
+      display: grid;
+      gap: 3px;
+    }
+
+    .today-copy strong {
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.2;
+    }
+
+    .today-copy span {
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .progress-ring {
+      --pct: 0%;
+      width: 54px;
+      height: 54px;
+      border-radius: 999px;
+      background: conic-gradient(var(--brand-blue) var(--pct), #edf0f5 0);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .progress-ring::after {
+      content: attr(data-label);
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      background: var(--card-bg);
+      display: grid;
+      place-items: center;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .today-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .task-chip {
+      min-height: 52px;
+      padding: 8px 7px;
+      border-radius: 13px;
+      background: var(--panel-bg);
+      border: 1px solid var(--hairline);
+      color: var(--text-primary);
+      display: grid;
+      gap: 5px;
+      align-content: center;
+      text-align: left;
+    }
+
+    .task-chip strong {
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.1;
+    }
+
+    .task-chip span {
+      color: var(--text-secondary);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .task-chip.is-done {
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .task-chip.is-done span {
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .task-chip[data-task="exercise"].is-done {
+      background: var(--exercise-orange);
+    }
+
+    .task-chip[data-task="noSnack"].is-done {
+      background: var(--success-green);
+    }
+
+    .task-chip[data-task="readSleep"].is-done {
+      background: var(--sleep-indigo);
+    }
+
+    .calendar-card {
+      padding: 14px;
+    }
+
+    .month-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .month-bar strong {
+      font-size: 17px;
+      font-weight: 850;
+      letter-spacing: 0;
+    }
+
+    .month-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tiny-button {
+      min-width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: var(--panel-bg);
+      border: 1px solid var(--hairline);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .weekdays,
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .weekdays {
+      margin-bottom: 7px;
+    }
+
+    .weekdays span {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .day {
+      min-width: 0;
+      aspect-ratio: 1 / 1.08;
+      padding: 6px 4px;
+      border-radius: 13px;
+      background: var(--panel-bg);
+      border: 1px solid transparent;
+      display: grid;
+      align-content: space-between;
+      justify-items: center;
+      color: var(--text-primary);
+      transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+    }
+
+    .day:active {
+      transform: scale(0.98);
+    }
+
+    .day.is-outside {
+      opacity: 0.34;
+    }
+
+    .day.is-today {
+      border-color: rgba(37, 99, 235, 0.45);
+      background: #eef4fd;
+    }
+
+    .day.is-selected {
+      border-color: var(--brand-blue);
+      box-shadow: inset 0 0 0 1px var(--brand-blue);
+    }
+
+    .day-num {
+      width: 23px;
+      height: 21px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .day.is-full .day-num {
+      background: var(--complete-pink);
+      color: #fff;
+    }
+
+    .day.is-empty .day-num {
+      color: var(--text-secondary);
+    }
+
+    .marks {
+      min-height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+    }
+
+    .mark {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      opacity: 0.2;
+    }
+
+    .mark.is-on {
+      opacity: 1;
+    }
+
+    .mark.exercise {
+      background: var(--exercise-orange);
+    }
+
+    .mark.noSnack {
+      background: var(--success-green);
+    }
+
+    .mark.readSleep {
+      background: var(--sleep-indigo);
+    }
+
+    .editor-sheet {
+      margin-top: 14px;
+      padding: 14px;
+      display: grid;
+      gap: 13px;
+    }
+
+    .editor-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .editor-top strong {
+      display: block;
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.25;
+    }
+
+    .editor-top span {
+      display: block;
+      margin-top: 3px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .status-pill {
+      min-height: 28px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #edf7ef;
+      color: var(--success-green);
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .editor-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .task-row {
+      min-height: 54px;
+      padding: 10px 10px 10px 12px;
+      border-radius: 14px;
+      background: var(--panel-bg);
+      border: 1px solid var(--hairline);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .task-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .task-row[data-task="exercise"] .task-dot {
+      background: var(--exercise-orange);
+    }
+
+    .task-row[data-task="noSnack"] .task-dot {
+      background: var(--success-green);
+    }
+
+    .task-row[data-task="readSleep"] .task-dot {
+      background: var(--sleep-indigo);
+    }
+
+    .task-row-copy {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .task-row-copy strong {
+      font-size: 13px;
+      font-weight: 830;
+      line-height: 1.2;
+    }
+
+    .task-row-copy span {
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 650;
+      line-height: 1.2;
+    }
+
+    .switch {
+      width: 46px;
+      height: 28px;
+      border-radius: 999px;
+      padding: 3px;
+      background: #d8dde6;
+      display: flex;
+      justify-content: flex-start;
+      transition: background 120ms ease;
+      flex: 0 0 auto;
+    }
+
+    .switch::after {
+      content: "";
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(26, 31, 41, 0.18);
+    }
+
+    .switch.is-on {
+      justify-content: flex-end;
+    }
+
+    .task-row[data-task="exercise"] .switch.is-on {
+      background: var(--exercise-orange);
+    }
+
+    .task-row[data-task="noSnack"] .switch.is-on {
+      background: var(--success-green);
+    }
+
+    .task-row[data-task="readSleep"] .switch.is-on {
+      background: var(--sleep-indigo);
+    }
+
+    .note-field {
+      min-height: 72px;
+      width: 100%;
+      resize: none;
+      border: 1px solid var(--hairline);
+      border-radius: 14px;
+      background: var(--panel-bg);
+      color: var(--text-primary);
+      outline: none;
+      padding: 11px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .note-field::placeholder {
+      color: var(--text-muted);
+    }
+
+    .editor-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 9px;
+    }
+
+    .ghost-button,
+    .primary-button {
+      min-height: 42px;
+      border-radius: 13px;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .ghost-button {
+      color: var(--text-secondary);
+      background: var(--panel-bg);
+      border: 1px solid var(--hairline);
+    }
+
+    .primary-button {
+      color: #fff;
+      background: var(--brand-blue);
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 56px;
+      transform: translate(-50%, -12px);
+      min-height: 38px;
+      min-width: 148px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(26, 31, 41, 0.9);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 750;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      z-index: 5;
+    }
+
+    .toast.is-showing {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .notes {
+      display: grid;
+      gap: 16px;
+    }
+
+    .note-panel {
+      padding: 18px;
+      background: var(--card-bg);
+      border: 1px solid var(--hairline);
+      border-radius: 18px;
+      box-shadow: 0 10px 28px rgba(26, 31, 41, 0.05);
+    }
+
+    .note-panel h2 {
+      margin: 0 0 12px;
+      font-size: 17px;
+      font-weight: 850;
+      letter-spacing: 0;
+    }
+
+    .flow-list,
+    .rule-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+
+    .flow-list li,
+    .rule-list li {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .flow-list b,
+    .rule-list b {
+      color: var(--text-primary);
+    }
+
+    .step {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: #eef4fd;
+      color: var(--brand-blue);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: var(--panel-bg);
+      border: 1px solid var(--hairline);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .legend-swatch {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+    }
+
+    .swatch-exercise {
+      background: var(--exercise-orange);
+    }
+
+    .swatch-no-snack {
+      background: var(--success-green);
+    }
+
+    .swatch-read-sleep {
+      background: var(--sleep-indigo);
+    }
+
+    @media (max-width: 860px) {
+      .canvas {
+        width: min(430px, calc(100vw - 20px));
+        padding-top: 18px;
+      }
+
+      .brief {
+        display: grid;
+      }
+
+      .brief-tags {
+        justify-content: flex-start;
+      }
+
+      .stage {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        position: relative;
+        top: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="canvas">
+    <section class="brief" aria-label="设计摘要">
+      <div>
+        <h1>自律打卡 · 月历编辑线框</h1>
+        <p>App 内页面默认进入当前月；日期格展示运动、别吃夜宵、阅读早睡三类打卡状态。选择任意日期后，可直接编辑历史打卡与当天备注。</p>
+      </div>
+      <div class="brief-tags" aria-label="页面约束">
+        <span class="brief-tag">无周/月切换</span>
+        <span class="brief-tag">当前月默认</span>
+        <span class="brief-tag">历史可编辑</span>
+      </div>
+    </section>
+
+    <section class="stage">
+      <section class="phone" aria-label="iPhone 线框预览">
+        <div class="toast" id="toast">已保存</div>
+        <div class="status">
+          <span>9:41</span>
+          <span>5G 100%</span>
+        </div>
+        <div class="app">
+          <header class="nav">
+            <div class="nav-title">
+              <strong>自律打卡</strong>
+              <span id="navSubtitle">今日已完成 0/3</span>
+            </div>
+            <button class="icon-button" id="todayButton" type="button" aria-label="回到今天">今</button>
+          </header>
+
+          <section class="today-card" aria-label="今日打卡">
+            <div class="today-head">
+              <div class="today-copy">
+                <strong id="todayTitle">今日打卡</strong>
+                <span id="todayMeta">选择日期后可编辑记录</span>
+              </div>
+              <div class="progress-ring" id="todayRing" data-label="0/3" style="--pct: 0%"></div>
+            </div>
+            <div class="today-actions" id="todayActions"></div>
+          </section>
+
+          <section class="calendar-card" aria-label="月历">
+            <div class="month-bar">
+              <strong id="monthTitle">2026年6月</strong>
+              <div class="month-controls">
+                <button class="tiny-button" id="prevMonth" type="button" aria-label="上个月">‹</button>
+                <button class="tiny-button" id="nextMonth" type="button" aria-label="下个月">›</button>
+              </div>
+            </div>
+            <div class="weekdays" aria-hidden="true">
+              <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+          </section>
+
+          <section class="editor-sheet" aria-label="日期打卡编辑">
+            <div class="editor-top">
+              <div>
+                <strong id="editorTitle">编辑打卡</strong>
+                <span id="editorMeta">3 项日常任务</span>
+              </div>
+              <span class="status-pill" id="editorStatus">0/3</span>
+            </div>
+            <div class="editor-list" id="editorList"></div>
+            <textarea class="note-field" id="noteField" placeholder="备注，例如：晚饭后散步 40 分钟"></textarea>
+            <div class="editor-actions">
+              <button class="ghost-button" id="clearButton" type="button">清空</button>
+              <button class="primary-button" id="saveButton" type="button">保存更改</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="notes" aria-label="交互说明">
+        <section class="note-panel">
+          <h2>核心改动</h2>
+          <ul class="flow-list">
+            <li><span class="step">1</span><span><b>历史区域改为单一月历。</b>去掉「最近 1 周 / 最近 1 月」分段控件，默认渲染设备当前月份。</span></li>
+            <li><span class="step">2</span><span><b>每日状态直接在日期格内可见。</b>三个小点对应三项固定打卡，粉色日期表示当天 3/3 完成。</span></li>
+            <li><span class="step">3</span><span><b>点击日期即进入编辑。</b>编辑区固定在月历下方，移动端实现时可替换成 SwiftUI sheet 或底部抽屉。</span></li>
+            <li><span class="step">4</span><span><b>历史记录允许改写。</b>切换任意任务、清空当天或补备注，保存后月历与顶部统计同步刷新。</span></li>
+          </ul>
+        </section>
+
+        <section class="note-panel">
+          <h2>状态图例</h2>
+          <p style="margin:0;color:var(--text-secondary);font-size:14px;line-height:1.5;">每个日期格只展示结果，不放解释性文字，避免日历密度过高。</p>
+          <div class="legend">
+            <span class="legend-item"><i class="legend-swatch swatch-exercise"></i>运动</span>
+            <span class="legend-item"><i class="legend-swatch swatch-no-snack"></i>别吃夜宵</span>
+            <span class="legend-item"><i class="legend-swatch swatch-read-sleep"></i>阅读早睡</span>
+            <span class="legend-item"><i class="legend-swatch" style="background:var(--complete-pink)"></i>全部完成</span>
+          </div>
+        </section>
+
+        <section class="note-panel">
+          <h2>落地建议</h2>
+          <ul class="rule-list">
+            <li><span class="step">A</span><span><b>模型保持轻量。</b>现有 `CheckInRecord(day, task)` 已能支撑历史编辑；若要保存备注，可新增按日备注表或扩展记录模型。</span></li>
+            <li><span class="step">B</span><span><b>写入仍走 `CheckInStore`。</b>App 页面与 Widget 继续共享 App Group 数据，保存后 reload widget timeline。</span></li>
+            <li><span class="step">C</span><span><b>SwiftUI 组件拆分。</b>建议拆成 `CheckInMonthCalendar`、`CheckInDayEditor`、`CheckInSummaryCard`，页面本身只负责编排。</span></li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const tasks = [
+      { id: "exercise", title: "运动", window: "11:00-13:00" },
+      { id: "noSnack", title: "别吃夜宵", window: "20:30-22:30" },
+      { id: "readSleep", title: "阅读早睡", window: "23:30-00:30" }
+    ];
+
+    const now = new Date();
+    let visibleMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    let selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const records = {};
+    let toastTimer = null;
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function dateKey(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function dayLabel(date) {
+      return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    function weekdayLabel(date) {
+      return ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][date.getDay()];
+    }
+
+    function sameDay(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
+    function ensureRecord(date) {
+      const key = dateKey(date);
+      if (!records[key]) {
+        records[key] = { exercise: false, noSnack: false, readSleep: false, note: "" };
+      }
+      return records[key];
+    }
+
+    function seedMonth(anchor) {
+      const year = anchor.getFullYear();
+      const month = anchor.getMonth();
+      const days = new Date(year, month + 1, 0).getDate();
+      for (let day = 1; day <= days; day += 1) {
+        const d = new Date(year, month, day);
+        if (d > now) continue;
+        const key = dateKey(d);
+        if (records[key]) continue;
+        const pattern = (day * 7 + month * 3) % 10;
+        records[key] = {
+          exercise: pattern % 2 === 0 || pattern === 7,
+          noSnack: pattern !== 3 && pattern !== 8,
+          readSleep: pattern === 0 || pattern === 4 || pattern === 6 || pattern === 9,
+          note: day === now.getDate() ? "今天状态不错，晚点补阅读早睡。" : ""
+        };
+      }
+    }
+
+    function completedCount(record) {
+      return tasks.filter(task => record[task.id]).length;
+    }
+
+    function renderTodayCard() {
+      const record = ensureRecord(selectedDate);
+      const count = completedCount(record);
+      const title = sameDay(selectedDate, now) ? "今日打卡" : `${dayLabel(selectedDate)}打卡`;
+      document.getElementById("todayTitle").textContent = title;
+      document.getElementById("todayMeta").textContent = `${weekdayLabel(selectedDate)} · 已完成 ${count}/3`;
+      document.getElementById("navSubtitle").textContent = sameDay(selectedDate, now)
+        ? `今日已完成 ${count}/3`
+        : `${dayLabel(selectedDate)} 已完成 ${count}/3`;
+      const ring = document.getElementById("todayRing");
+      ring.dataset.label = `${count}/3`;
+      ring.style.setProperty("--pct", `${count / 3 * 100}%`);
+
+      const actions = document.getElementById("todayActions");
+      actions.innerHTML = "";
+      tasks.forEach(task => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `task-chip ${record[task.id] ? "is-done" : ""}`;
+        button.dataset.task = task.id;
+        button.innerHTML = `<strong>${task.title}</strong><span>${record[task.id] ? "已完成" : task.window}</span>`;
+        button.addEventListener("click", () => {
+          record[task.id] = !record[task.id];
+          render();
+        });
+        actions.appendChild(button);
+      });
+    }
+
+    function renderCalendar() {
+      seedMonth(visibleMonth);
+      const year = visibleMonth.getFullYear();
+      const month = visibleMonth.getMonth();
+      document.getElementById("monthTitle").textContent = `${year}年${month + 1}月`;
+      const grid = document.getElementById("calendarGrid");
+      grid.innerHTML = "";
+
+      const firstDay = new Date(year, month, 1);
+      const offset = (firstDay.getDay() + 6) % 7;
+      const start = new Date(year, month, 1 - offset);
+      for (let index = 0; index < 42; index += 1) {
+        const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
+        const record = ensureRecord(date);
+        const count = completedCount(record);
+        const isOutside = date.getMonth() !== month;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = [
+          "day",
+          isOutside ? "is-outside" : "",
+          sameDay(date, now) ? "is-today" : "",
+          sameDay(date, selectedDate) ? "is-selected" : "",
+          count === 3 ? "is-full" : "",
+          count === 0 ? "is-empty" : ""
+        ].filter(Boolean).join(" ");
+        button.innerHTML = `
+          <span class="day-num">${date.getDate()}</span>
+          <span class="marks">
+            ${tasks.map(task => `<i class="mark ${task.id} ${record[task.id] ? "is-on" : ""}"></i>`).join("")}
+          </span>
+        `;
+        button.addEventListener("click", () => {
+          selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          if (selectedDate.getMonth() !== visibleMonth.getMonth() || selectedDate.getFullYear() !== visibleMonth.getFullYear()) {
+            visibleMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+          }
+          render();
+        });
+        grid.appendChild(button);
+      }
+    }
+
+    function renderEditor() {
+      const record = ensureRecord(selectedDate);
+      const count = completedCount(record);
+      document.getElementById("editorTitle").textContent = `${dayLabel(selectedDate)} · ${weekdayLabel(selectedDate)}`;
+      document.getElementById("editorMeta").textContent = sameDay(selectedDate, now) ? "今天" : "历史打卡";
+      document.getElementById("editorStatus").textContent = `${count}/3`;
+      document.getElementById("noteField").value = record.note || "";
+
+      const list = document.getElementById("editorList");
+      list.innerHTML = "";
+      tasks.forEach(task => {
+        const row = document.createElement("div");
+        row.className = "task-row";
+        row.dataset.task = task.id;
+        row.innerHTML = `
+          <i class="task-dot"></i>
+          <span class="task-row-copy">
+            <strong>${task.title}</strong>
+            <span>${task.window}</span>
+          </span>
+          <button class="switch ${record[task.id] ? "is-on" : ""}" type="button" aria-label="${task.title}"></button>
+        `;
+        row.querySelector("button").addEventListener("click", () => {
+          record[task.id] = !record[task.id];
+          render();
+        });
+        list.appendChild(row);
+      });
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById("toast");
+      toast.textContent = text;
+      toast.classList.add("is-showing");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("is-showing"), 1600);
+    }
+
+    function render() {
+      renderTodayCard();
+      renderCalendar();
+      renderEditor();
+    }
+
+    document.getElementById("prevMonth").addEventListener("click", () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+      selectedDate = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+      render();
+    });
+
+    document.getElementById("nextMonth").addEventListener("click", () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+      selectedDate = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+      render();
+    });
+
+    document.getElementById("todayButton").addEventListener("click", () => {
+      visibleMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      selectedDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      render();
+    });
+
+    document.getElementById("clearButton").addEventListener("click", () => {
+      const record = ensureRecord(selectedDate);
+      tasks.forEach(task => { record[task.id] = false; });
+      record.note = "";
+      render();
+      showToast("已清空");
+    });
+
+    document.getElementById("saveButton").addEventListener("click", () => {
+      ensureRecord(selectedDate).note = document.getElementById("noteField").value.trim();
+      render();
+      showToast("已保存");
+    });
+
+    document.getElementById("noteField").addEventListener("input", event => {
+      ensureRecord(selectedDate).note = event.target.value;
+    });
+
+    seedMonth(visibleMonth);
+    render();
+  </script>
+</body>
+</html>

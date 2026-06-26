@@ -13,6 +13,7 @@ import Foundation
 /// 数组型字段按 `TimeRange.rawValue` 分桶，便于按页面所需范围分别缓存。
 private struct TrendSnapshot: Codable {
     var activeEnergyDaily: [DailyMetric] = []
+    var exerciseMinutesDaily: [DailyMetric] = []
     var basalEnergyDaily: [DailyMetric] = []
     var exerciseSeries: [String: [ExerciseSample]] = [:]
     var workouts: [WorkoutSession] = []
@@ -60,6 +61,7 @@ final class CachingHealthRepository: HealthDataRepository {
 
     // 本会话已拉到的新鲜值（nil = 尚未拉取）。
     private var activeDaily: [DailyMetric]?
+    private var exerciseMinutesDaily: [DailyMetric]?
     private var basalDaily: [DailyMetric]?
     private var exerciseSeriesCache: [TimeRange: [ExerciseSample]] = [:]
     private var workoutsCache: [WorkoutSession]?
@@ -71,6 +73,7 @@ final class CachingHealthRepository: HealthDataRepository {
 
     // 在途去重：并发命中同一查询时复用同一个 Task。
     private var activeDailyTask: Task<[DailyMetric], Never>?
+    private var exerciseMinutesDailyTask: Task<[DailyMetric], Never>?
     private var basalDailyTask: Task<[DailyMetric], Never>?
     private var exerciseSeriesTask: [TimeRange: Task<[ExerciseSample], Never>] = [:]
     private var workoutsTask: Task<[WorkoutSession], Never>?
@@ -91,6 +94,7 @@ final class CachingHealthRepository: HealthDataRepository {
     /// 完成后缓存皆热，用户点开任意 tab 立即命中、无转圈。
     func prewarm() async {
         async let a = activeEnergyDailyTrend()
+        async let m = exerciseMinutesDailyTrend()
         async let b = basalEnergyDailyTrend()
         async let e = exerciseSeries(range: .all)
         async let w = workoutSessions()
@@ -99,7 +103,7 @@ final class CachingHealthRepository: HealthDataRepository {
         async let rw = recentWeightRecords(limit: 5)
         async let st = weightStatistics()
         async let sl = sleepSeries(range: .year)
-        _ = await (a, b, e, w)
+        _ = await (a, m, b, e, w)
         _ = await (ws, bf, rw, st, sl)
     }
 
@@ -107,6 +111,7 @@ final class CachingHealthRepository: HealthDataRepository {
     /// 落盘快照继续保留，因此 HealthKit 暂时返回空结果时仍能回退到上次有效数据。
     func refreshCachedData() async {
         activeDaily = nil
+        exerciseMinutesDaily = nil
         basalDaily = nil
         exerciseSeriesCache = [:]
         workoutsCache = nil
@@ -123,6 +128,7 @@ final class CachingHealthRepository: HealthDataRepository {
     /// 不触碰事件 / 目标 / 授权等用户数据；清空后下次 prewarm 会从真实数据源重新拉取。
     func clearCache() {
         activeDaily = nil
+        exerciseMinutesDaily = nil
         basalDaily = nil
         exerciseSeriesCache = [:]
         workoutsCache = nil
@@ -133,6 +139,7 @@ final class CachingHealthRepository: HealthDataRepository {
         sleepSeriesCache = [:]
 
         activeDailyTask = nil
+        exerciseMinutesDailyTask = nil
         basalDailyTask = nil
         exerciseSeriesTask = [:]
         workoutsTask = nil
@@ -174,6 +181,20 @@ final class CachingHealthRepository: HealthDataRepository {
         guard !fetched.isEmpty else { return snapshot.activeEnergyDaily }
         activeDaily = fetched
         snapshot.activeEnergyDaily = fetched
+        persistSnapshot()
+        return fetched
+    }
+
+    func exerciseMinutesDailyTrend() async -> [DailyMetric] {
+        if let exerciseMinutesDaily { return exerciseMinutesDaily }
+        if let exerciseMinutesDailyTask { return await exerciseMinutesDailyTask.value }
+        let task = Task { await base.exerciseMinutesDailyTrend() }
+        exerciseMinutesDailyTask = task
+        let fetched = await task.value
+        exerciseMinutesDailyTask = nil
+        guard !fetched.isEmpty else { return snapshot.exerciseMinutesDaily }
+        exerciseMinutesDaily = fetched
+        snapshot.exerciseMinutesDaily = fetched
         persistSnapshot()
         return fetched
     }

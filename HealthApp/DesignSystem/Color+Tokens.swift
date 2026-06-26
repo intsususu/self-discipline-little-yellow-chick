@@ -36,6 +36,7 @@ extension Color {
     // MARK: - 体脂趋势（先试粉色）
     static let bodyFatPink     = Color(hex: "#db2777")  // 体脂肪（kg）主轴线：玫红
     static let bodyFatPinkSoft = Color(hex: "#f472b6")  // 体脂率（%）副轴线：浅粉
+    static let checkInCompletePink = Color(hex: "#ec4899") // 自律打卡：单日全部完成
 
     // MARK: - Apple 健康睡眠阶段
     static let sleepDeep      = Color(hex: "#5856d6")  // 深度睡眠：紫色
