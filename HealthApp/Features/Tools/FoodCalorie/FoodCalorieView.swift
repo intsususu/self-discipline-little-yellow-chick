@@ -1,6 +1,6 @@
 // FoodCalorieView.swift
 // 小工具 · 食品热量表：搜索 + 一级分类 + 二级标签 + 排序 + 列表。
-// 见 docs/食品热量表设计.md。纯查询工具，本地内置数据，无入库。
+// 见 docs/prd/食品热量表设计.md。纯查询工具，本地内置数据，无入库。
 
 import SwiftUI
 

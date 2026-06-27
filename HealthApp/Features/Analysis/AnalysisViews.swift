@@ -1,5 +1,5 @@
 // AnalysisViews.swift
-// 综合分析周期选择与报告页。视觉与 docs/综合分析报告/prototype.html 保持一致。
+// 综合分析周期选择与报告页。视觉与 docs/prototype-design/综合分析报告/prototype.html 保持一致。
 
 import SwiftUI
 import UIKit

@@ -199,6 +199,10 @@ struct ProfileView: View {
                 #endif
             }
             settingDivider
+            settingRow(icon: "square.and.arrow.down.fill", title: "体测数据导入", value: "暂未开放 ›", tint: .eventTravel, valueColor: .textMuted) {
+                placeholderToast("体测数据导入")
+            }
+            settingDivider
             settingRow(icon: "chart.line.uptrend.xyaxis", title: "综合分析", value: "趋势/关联/建议 ›", tint: .brandBlue) {
                 appState.presentAnalysis()
             }
@@ -213,10 +217,6 @@ struct ProfileView: View {
 
     private var toolsSettings: some View {
         settingsGroup(title: "小工具") {
-            settingRow(icon: "square.and.arrow.down.fill", title: "体测数据导入", value: "暂未开放 ›", tint: .eventTravel, valueColor: .textMuted) {
-                placeholderToast("体测数据导入")
-            }
-            settingDivider
             settingRow(icon: "fork.knife", title: "食品热量表", value: "查询 ›", tint: .exerciseOrange) {
                 showsFoodCalorie = true
             }

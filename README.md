@@ -144,8 +144,8 @@ HealthApp/
 开始修改前请先阅读：
 
 1. [`AGENTS.md`](AGENTS.md)：技术约束、隐私红线与范围纪律。
-2. [`产品需求文档`](docs/最早原型图/健康数据分析App-PRD.md)：数值、颜色、文案和 Mock 数据契约。
-3. [`施工任务清单`](tasks/README.md) 及对应任务文件。
+2. [`产品需求文档`](docs/prototype-design/健康数据分析App-PRD.md)：数值、颜色、文案和 Mock 数据契约。
+3. [`施工任务清单`](docs/tasks/README.md) 及对应任务文件。
 
 关键规则：
 
@@ -171,14 +171,16 @@ git config core.hooksPath .githooks
 
 ## 设计与文档
 
-- [`产品需求文档`](docs/最早原型图/健康数据分析App-PRD.md)
-- [`高保真离线原型`](docs/最早原型图/健康App-高保真原型-离线版.html)
-- [`线框图`](docs/最早原型图/健康数据分析App-线框图.html)
-- [`综合分析报告设计`](docs/综合分析报告/综合分析报告设计.md)
-- [`综合分析报告原型`](docs/综合分析报告/prototype.html)
-- [`睡眠质量评分设计`](docs/睡眠质量评分设计.md)
+- [`产品需求文档`](docs/prototype-design/健康数据分析App-PRD.md)
+- [`高保真离线原型`](docs/prototype-design/健康App-高保真原型-离线版.html)
+- [`线框图`](docs/prototype-design/健康数据分析App-线框图.html)
+- [`综合分析报告设计`](docs/prototype-design/综合分析报告/综合分析报告设计.md)
+- [`综合分析报告原型`](docs/prototype-design/综合分析报告/prototype.html)
+- [`睡眠质量评分设计`](docs/prd/睡眠质量评分设计.md)
+- [`训练计划设计`](docs/prd/训练计划设计.md)
+- [`食品热量表设计`](docs/prd/食品热量表设计.md)
 - [`设计验收记录`](docs/design-qa.md)
-- [`任务拆分`](tasks/README.md)
+- [`任务拆分`](docs/tasks/README.md)
 
 ## 隐私说明
 

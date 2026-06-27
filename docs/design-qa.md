@@ -1,6 +1,6 @@
 # 综合分析报告 · Design QA
 
-- source visual truth path: `docs/综合分析报告/prototype.html`
+- source visual truth path: `docs/prototype-design/综合分析报告/prototype.html`
 - source screenshot path: `/tmp/healthapp-analysis-qa/prototype-report.html.png`
 - implementation screenshot path: `/tmp/healthapp-analysis-qa/05-report-final-layout.png`
 - shared date picker screenshot path: `/tmp/healthapp-analysis-qa/06-range-shared-date.png`

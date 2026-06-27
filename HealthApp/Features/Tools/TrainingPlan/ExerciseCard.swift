@@ -1,125 +1,93 @@
 // ExerciseCard.swift
-// 小工具 · 训练计划：动作卡片与图片占位。
+// 小工具 · 训练计划：动作列表项（过渡版，基于新动作库模型）。
+// 完整卡片/详情在 TP02/TP03 重做；此处先提供可编译的精简行，验证 TP01 数据层。
 
 import SwiftUI
 import UIKit
 
+/// 动作列表行：缩略占位 + 中文名/英文名 + 主练肌群/类型/难度。
 struct ExerciseCard: View {
     let exercise: Exercise
     let accent: Color
 
     var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 12) {
-                images
-                header
-                muscleSummary
-                Divider().background(Color.hairline)
-                keyPoints
-            }
-        }
-    }
-
-    // MARK: - 图片
-
-    private var images: some View {
-        HStack(spacing: 8) {
-            TrainingIllustrationView(
-                imageName: exercise.equipImage,
-                title: "器械/动作图",
-                subtitle: exercise.name,
-                systemImage: "figure.strengthtraining.traditional",
-                accent: accent,
-                aspectRatio: 4 / 3
-            )
-            TrainingIllustrationView(
-                imageName: exercise.muscleImage,
-                title: "肌肉发力图",
-                subtitle: exercise.primaryMuscles,
-                systemImage: "bolt.heart.fill",
-                accent: accent,
-                aspectRatio: 4 / 3
-            )
-        }
-    }
-
-    // MARK: - 标题
-
-    private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(spacing: 11) {
+            thumbnail
             VStack(alignment: .leading, spacing: 3) {
                 Text(exercise.name)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.textPrimary)
                 Text(exercise.nameEn)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.textMuted)
+                tags
             }
-            Spacer()
-            Text(exercise.setsReps)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(accent)
-                .multilineTextAlignment(.trailing)
-                .lineLimit(2)
-                .minimumScaleFactor(0.75)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(accent.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            Spacer(minLength: 0)
         }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.cardBg)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.hairline, lineWidth: 1)
+        )
     }
 
-    private var muscleSummary: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            muscleLine(label: "主", text: exercise.primaryMuscles, color: accent)
-            if !exercise.synergistMuscles.isEmpty {
-                muscleLine(label: "协同", text: exercise.synergistMuscles, color: .textSecondary)
-            }
-        }
+    private var thumbnail: some View {
+        RoundedRectangle(cornerRadius: 9, style: .continuous)
+            .fill(accent.opacity(0.10))
+            .frame(width: 50, height: 50)
+            .overlay(
+                Image(systemName: exercise.hasVideo ? "play.fill" : "figure.strengthtraining.traditional")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(accent)
+            )
     }
 
-    private func muscleLine(label: String, text: String, color: Color) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Text(label)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(color)
-                .frame(minWidth: 24)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(color.opacity(0.1))
-                .clipShape(Capsule())
-            Text(text)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+    private var tags: some View {
+        HStack(spacing: 5) {
+            if let primary = exercise.primaryMuscles.first {
+                tag(primary)
+            }
+            tag(exercise.type)
+            DifficultyDots(level: exercise.difficulty)
         }
+        .padding(.top, 4)
     }
 
-    // MARK: - 要点
-
-    private var keyPoints: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text("动作要点")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.textPrimary)
-
-            ForEach(Array(exercise.points.enumerated()), id: \.offset) { _, point in
-                HStack(alignment: .top, spacing: 7) {
-                    Circle()
-                        .fill(accent)
-                        .frame(width: 5, height: 5)
-                        .padding(.top, 6)
-                    Text(point)
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
+    private func tag(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(.textSecondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(Color.appBg)
+            )
     }
 }
 
-// MARK: - 图片占位
+/// 难度圆点：实心 ×level + 空心 ×(5-level)，压缩到 1–5。
+struct DifficultyDots: View {
+    let level: Int
+
+    var body: some View {
+        let n = min(max(level, 1), 5)
+        HStack(spacing: 2) {
+            ForEach(0..<5, id: \.self) { i in
+                Circle()
+                    .fill(i < n ? Color.exerciseOrange : Color.exerciseOrange.opacity(0.22))
+                    .frame(width: 4.5, height: 4.5)
+            }
+        }
+        .accessibilityLabel(Text("难度 \(n)/5"))
+    }
+}
+
+// MARK: - 图片占位（保留供 TP03 详情页复用）
 
 struct TrainingIllustrationView: View {
     let imageName: String
@@ -178,10 +146,7 @@ struct TrainingIllustrationView: View {
 }
 
 #Preview {
-    ExerciseCard(
-        exercise: TrainingPlanData.parts[0].exercises[0],
-        accent: .brandBlue
-    )
-    .padding()
-    .background(Color.appBg)
+    ExerciseCard(exercise: TrainingPlanData.exercises[0], accent: .brandBlue)
+        .padding()
+        .background(Color.appBg)
 }

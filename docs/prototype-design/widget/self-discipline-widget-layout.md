@@ -39,7 +39,7 @@
 > 注意 WidgetKit 对入包图片有面积上限（约 1,069,415 px²），单图建议 ≤ 720×720。
 
 ### 2.2 原型 HTML 用图（仅预览，不入包）
-位于 `docs/widget/`：`fitness.png`(运动)、`yexiao.png`(夜宵)、`night.png`(早睡)、`china.png`(非时段)。`superman.png` 原为周末态，现已不再使用。
+位于 `docs/prototype-design/widget/`：`fitness.png`(运动)、`yexiao.png`(夜宵)、`night.png`(早睡)、`china.png`(非时段)。`superman.png` 原为周末态，现已不再使用。
 
 ---
 
