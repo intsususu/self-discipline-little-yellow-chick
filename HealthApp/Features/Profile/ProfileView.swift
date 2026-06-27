@@ -14,6 +14,7 @@ struct ProfileView: View {
     @State private var showsAbout = false
     @State private var showsHealthImport = false
     @State private var showsFoodCalorie = false
+    @State private var showsNutrientTier = false
     @State private var showsTrainingPlan = false
     @State private var currentWeight: Double?
 
@@ -89,6 +90,9 @@ struct ProfileView: View {
             }
             .navigationDestination(isPresented: $showsFoodCalorie) {
                 FoodCalorieView()
+            }
+            .navigationDestination(isPresented: $showsNutrientTier) {
+                NutrientTierView()
             }
             .navigationDestination(isPresented: $showsTrainingPlan) {
                 TrainingPlanView()
@@ -215,6 +219,10 @@ struct ProfileView: View {
             settingDivider
             settingRow(icon: "fork.knife", title: "食品热量表", value: "查询 ›", tint: .exerciseOrange) {
                 showsFoodCalorie = true
+            }
+            settingDivider
+            settingRow(icon: "list.bullet.rectangle.portrait", title: "营养素红黑榜", value: "夯→拉 ›", tint: .successGreen) {
+                showsNutrientTier = true
             }
             settingDivider
             settingRow(icon: "figure.strengthtraining.traditional", title: "训练计划", value: "查看 ›", tint: .brandBlue) {

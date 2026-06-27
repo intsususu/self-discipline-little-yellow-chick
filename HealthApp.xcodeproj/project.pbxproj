@@ -74,6 +74,8 @@
 		BFF000000000000000000001 /* FoodCalorieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF000000000000000000001 /* FoodCalorieModels.swift */; };
 		BFF000000000000000000002 /* FoodCalorieView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF000000000000000000002 /* FoodCalorieView.swift */; };
 		BFF000000000000000000003 /* FoodDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF000000000000000000003 /* FoodDetailSheet.swift */; };
+		BFF000000000000000000004 /* NutrientTierModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF000000000000000000004 /* NutrientTierModels.swift */; };
+		BFF000000000000000000005 /* NutrientTierView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF000000000000000000005 /* NutrientTierView.swift */; };
 		BFF100000000000000000001 /* TrainingPlanModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF100000000000000000001 /* TrainingPlanModels.swift */; };
 		BFF100000000000000000002 /* TrainingPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF100000000000000000002 /* TrainingPlanView.swift */; };
 		BFF100000000000000000003 /* ExerciseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF100000000000000000003 /* ExerciseCard.swift */; };
@@ -173,6 +175,8 @@
 		FEF000000000000000000001 /* FoodCalorieModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodCalorieModels.swift; sourceTree = "<group>"; };
 		FEF000000000000000000002 /* FoodCalorieView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodCalorieView.swift; sourceTree = "<group>"; };
 		FEF000000000000000000003 /* FoodDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodDetailSheet.swift; sourceTree = "<group>"; };
+		FEF000000000000000000004 /* NutrientTierModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutrientTierModels.swift; sourceTree = "<group>"; };
+		FEF000000000000000000005 /* NutrientTierView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutrientTierView.swift; sourceTree = "<group>"; };
 		FEF100000000000000000001 /* TrainingPlanModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingPlanModels.swift; sourceTree = "<group>"; };
 		FEF100000000000000000002 /* TrainingPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingPlanView.swift; sourceTree = "<group>"; };
 		FEF100000000000000000003 /* ExerciseCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseCard.swift; sourceTree = "<group>"; };
@@ -442,6 +446,8 @@
 				FEF000000000000000000001 /* FoodCalorieModels.swift */,
 				FEF000000000000000000002 /* FoodCalorieView.swift */,
 				FEF000000000000000000003 /* FoodDetailSheet.swift */,
+				FEF000000000000000000004 /* NutrientTierModels.swift */,
+				FEF000000000000000000005 /* NutrientTierView.swift */,
 			);
 			path = Tools/FoodCalorie;
 			sourceTree = "<group>";
@@ -593,6 +599,8 @@
 				BFF000000000000000000001 /* FoodCalorieModels.swift in Sources */,
 				BFF000000000000000000002 /* FoodCalorieView.swift in Sources */,
 				BFF000000000000000000003 /* FoodDetailSheet.swift in Sources */,
+				BFF000000000000000000004 /* NutrientTierModels.swift in Sources */,
+				BFF000000000000000000005 /* NutrientTierView.swift in Sources */,
 				BFF100000000000000000003 /* ExerciseCard.swift in Sources */,
 				BFF100000000000000000001 /* TrainingPlanModels.swift in Sources */,
 				BFF100000000000000000002 /* TrainingPlanView.swift in Sources */,
@@ -784,7 +792,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = HealthApp/HealthApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = 64FF893SV4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -801,7 +809,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.14;
+				MARKETING_VERSION = 1.2.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xltc.sdlyc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -817,7 +825,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = HealthApp/HealthApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = 64FF893SV4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -834,7 +842,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.14;
+				MARKETING_VERSION = 1.2.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xltc.sdlyc;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -849,7 +857,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = SelfDisciplineWidget/SelfDisciplineWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = 64FF893SV4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SelfDisciplineWidget/Info.plist;
@@ -859,7 +867,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.14;
+				MARKETING_VERSION = 1.2.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xltc.sdlyc.SelfDisciplineWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -877,7 +885,7 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_ENTITLEMENTS = SelfDisciplineWidget/SelfDisciplineWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 19;
+				CURRENT_PROJECT_VERSION = 20;
 				DEVELOPMENT_TEAM = 64FF893SV4;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SelfDisciplineWidget/Info.plist;
@@ -887,7 +895,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.14;
+				MARKETING_VERSION = 1.2.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.xltc.sdlyc.SelfDisciplineWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
