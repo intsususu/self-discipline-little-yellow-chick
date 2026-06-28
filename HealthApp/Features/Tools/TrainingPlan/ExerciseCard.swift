@@ -1,30 +1,77 @@
 // ExerciseCard.swift
-// 小工具 · 训练计划：动作列表项（过渡版，基于新动作库模型）。
-// 完整卡片/详情在 TP02/TP03 重做；此处先提供可编译的精简行，验证 TP01 数据层。
+// 小工具 · 训练计划：动作库列表行与共享展示组件。
 
 import SwiftUI
 import UIKit
 
-/// 动作列表行：缩略占位 + 中文名/英文名 + 主练肌群/类型/难度。
-struct ExerciseCard: View {
-    let exercise: Exercise
+/// 紧凑动作列表行：缩略占位 + 中文名/英文名 + 主练肌群/类型/难度。
+/// 同时服务力量动作（Exercise）、拉伸（StretchMove）与 HIIT（HIITMove）。
+struct ExerciseRow: View {
+    let name: String
+    let nameEn: String
+    let primaryTag: String?
+    let typeTag: String
+    let difficulty: Int
+    let video: String
     let accent: Color
+    let isFemale: Bool
+
+    init(name: String, nameEn: String, primaryTag: String?, typeTag: String,
+         difficulty: Int, video: String, accent: Color, isFemale: Bool) {
+        self.name = name
+        self.nameEn = nameEn
+        self.primaryTag = primaryTag
+        self.typeTag = typeTag
+        self.difficulty = difficulty
+        self.video = video
+        self.accent = accent
+        self.isFemale = isFemale
+    }
+
+    init(exercise: Exercise, accent: Color, isFemale: Bool) {
+        self.init(name: exercise.name, nameEn: exercise.nameEn,
+                  primaryTag: exercise.primaryMuscles.first, typeTag: exercise.type,
+                  difficulty: exercise.difficulty, video: exercise.video(female: isFemale),
+                  accent: accent, isFemale: isFemale)
+    }
+
+    init(stretch: StretchMove, accent: Color, isFemale: Bool) {
+        self.init(name: stretch.name, nameEn: stretch.nameEn,
+                  primaryTag: stretch.target, typeTag: stretch.kind,
+                  difficulty: stretch.difficulty, video: stretch.video,
+                  accent: accent, isFemale: isFemale)
+    }
+
+    init(hiit: HIITMove, accent: Color, isFemale: Bool) {
+        self.init(name: hiit.name, nameEn: hiit.nameEn,
+                  primaryTag: nil, typeTag: hiit.kind,
+                  difficulty: hiit.difficulty, video: hiit.video,
+                  accent: accent, isFemale: isFemale)
+    }
 
     var body: some View {
-        HStack(spacing: 11) {
+        HStack(spacing: 12) {
             thumbnail
+
             VStack(alignment: .leading, spacing: 3) {
-                Text(exercise.name)
+                Text(name)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.textPrimary)
-                Text(exercise.nameEn)
+                    .lineLimit(1)
+                Text(nameEn)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundColor(.textMuted)
+                    .lineLimit(1)
                 tags
             }
+
             Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.textMuted.opacity(0.7))
         }
-        .padding(10)
+        .padding(11)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.cardBg)
@@ -33,40 +80,43 @@ struct ExerciseCard: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.hairline, lineWidth: 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var thumbnail: some View {
-        RoundedRectangle(cornerRadius: 9, style: .continuous)
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(accent.opacity(0.10))
-            .frame(width: 50, height: 50)
-            .overlay(
-                Image(systemName: exercise.hasVideo ? "play.fill" : "figure.strengthtraining.traditional")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(accent)
-            )
+            .frame(width: 56, height: 56)
+            .overlay {
+                VStack(spacing: 4) {
+                    Image(systemName: video.isEmpty ? "video.slash" : "play.fill")
+                        .font(.system(size: 17, weight: .semibold))
+                    Text(isFemale ? "女版" : "男版")
+                        .font(.system(size: 9, weight: .bold))
+                }
+                .foregroundColor(accent)
+            }
     }
 
     private var tags: some View {
         HStack(spacing: 5) {
-            if let primary = exercise.primaryMuscles.first {
-                tag(primary)
+            if let primary = primaryTag, !primary.isEmpty {
+                ExerciseTag(title: primary, foreground: accent, background: accent.opacity(0.10))
             }
-            tag(exercise.type)
-            DifficultyDots(level: exercise.difficulty)
+            ExerciseTag(title: typeTag)
+            DifficultyDots(level: difficulty)
         }
         .padding(.top, 4)
     }
+}
 
-    private func tag(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 10, weight: .medium))
-            .foregroundColor(.textSecondary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(Color.appBg)
-            )
+/// 兼容旧名，避免预览或临时调用点失效。
+struct ExerciseCard: View {
+    let exercise: Exercise
+    let accent: Color
+
+    var body: some View {
+        ExerciseRow(exercise: exercise, accent: accent, isFemale: false)
     }
 }
 
@@ -84,6 +134,40 @@ struct DifficultyDots: View {
             }
         }
         .accessibilityLabel(Text("难度 \(n)/5"))
+    }
+}
+
+struct DifficultyBadge: View {
+    let level: Int
+    var color: Color = .exerciseOrange
+
+    var body: some View {
+        Text("难度 \(min(max(level, 1), 5))/5")
+            .font(.system(size: 11, weight: .bold))
+            .foregroundColor(color)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.10))
+            .clipShape(Capsule())
+    }
+}
+
+struct ExerciseTag: View {
+    let title: String
+    var foreground: Color = .textSecondary
+    var background: Color = .appBg
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 10, weight: .medium))
+            .foregroundColor(foreground)
+            .lineLimit(1)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(background)
+            )
     }
 }
 
@@ -146,7 +230,7 @@ struct TrainingIllustrationView: View {
 }
 
 #Preview {
-    ExerciseCard(exercise: TrainingPlanData.exercises[0], accent: .brandBlue)
+    ExerciseRow(exercise: TrainingPlanData.exercises[0], accent: .brandBlue, isFemale: false)
         .padding()
         .background(Color.appBg)
 }

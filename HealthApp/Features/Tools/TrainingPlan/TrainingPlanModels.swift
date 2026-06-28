@@ -1,9 +1,25 @@
 // TrainingPlanModels.swift
-// 小工具 · 训练计划：动作库数据模型 + 内置内容（7 类共 86 个精选动作）。
+// 小工具 · 训练计划：动作库数据模型 + 内置内容（7 类共 92 个动作）。
 // 数据源 docs/fitness/index.md，由 scratchpad/gen_exercises.py 解析生成（见 docs/tasks/训练计划重构/TP01-数据层.md）。
 // 视频字段为占位（仓库暂无 mp4），素材到位后接入；演示性别按个人资料自动匹配（见 TP02/TP03）。
 
 import SwiftUI
+
+// MARK: - 顶部三大类
+
+enum TrainingMode: String, CaseIterable, Identifiable {
+    case strength, stretch, hiit
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .strength: return "力量训练"
+        case .stretch:  return "拉伸"
+        case .hiit:     return "HIIT"
+        }
+    }
+}
 
 // MARK: - 训练分类（7 类）
 
@@ -19,7 +35,7 @@ enum MuscleCategory: String, CaseIterable, Identifiable {
         case .back:       return "背"
         case .shoulders:  return "肩"
         case .arms:       return "手臂"
-        case .lower:      return "下肢"
+        case .lower:      return "腿"
         case .functional: return "功能"
         }
     }
@@ -37,6 +53,7 @@ enum MuscleGroup: String, CaseIterable, Identifiable {
     case forearm
     case frontDeltoids = "front-deltoids"
     case deltoids
+    case rearDeltoids = "rear-deltoids"
     case trapezius
     case upperBack = "upper-back"
     case lowerBack = "lower-back"
@@ -60,7 +77,8 @@ enum MuscleGroup: String, CaseIterable, Identifiable {
         case .triceps:       return "肱三头肌"
         case .forearm:       return "前臂"
         case .frontDeltoids: return "三角肌前束"
-        case .deltoids:      return "三角肌"
+        case .deltoids:      return "三角肌中束"
+        case .rearDeltoids:  return "三角肌后束"
         case .trapezius:     return "斜方肌"
         case .upperBack:     return "背阔肌"
         case .lowerBack:     return "下背"
@@ -142,6 +160,11 @@ extension TrainingPlanData {
         }
     }
 
+    /// 按英文名精确查找动作（供训练计划预设引用）。
+    static func exercise(_ nameEn: String) -> Exercise? {
+        exercises.first { $0.nameEn == nameEn }
+    }
+
     /// 某分类下出现的动作类型（按首次出现顺序去重），供类型筛选 chips 使用。
     static func types(in category: MuscleCategory) -> [String] {
         var seen = Set<String>()
@@ -153,11 +176,11 @@ extension TrainingPlanData {
     }
 }
 
-// MARK: - 内置内容（7 类共 86 个，由 index.md 生成）
+// MARK: - 内置内容（86 个由 index.md 生成，另从 all.md 补 6 个：后束/中下斜方/肩袖/肩胛稳定/前臂屈伸/臀中肌）
 
 enum TrainingPlanData {
     static let exercises: [Exercise] = [
-        // MARK: core (15)
+        // MARK: core (16)
         Exercise("绳索跪姿卷腹", "Cable Kneeling Crunch", category: .core,
                  primaryMuscles: ["腹直肌"], muscleGroups: [.abs],
                  type: "卷腹", difficulty: 2,
@@ -218,6 +241,10 @@ enum TrainingPlanData {
                  primaryMuscles: ["腹直肌"], muscleGroups: [.abs],
                  type: "卷腹", difficulty: 2,
                  maleVideo: "V-Up.mp4", femaleVideo: "V-Up.mp4"),
+        Exercise("地面 L 坐支撑", "L-sit on Floor", category: .core,
+                 primaryMuscles: ["核心稳定肌群", "肩胛稳定肌群"], muscleGroups: [.abs, .upperBack],
+                 type: "坐姿支撑(L/V-sit)", difficulty: 4,
+                 maleVideo: "L-sit on Floor.mp4", femaleVideo: "L-sit on Floor.mp4"),
         // MARK: chest (15)
         Exercise("辅助肱三头肌臂屈伸", "Assisted Triceps Dip", category: .chest,
                  primaryMuscles: ["肱三头肌"], muscleGroups: [.triceps],
@@ -352,7 +379,7 @@ enum TrainingPlanData {
                  primaryMuscles: ["背阔肌"], muscleGroups: [.upperBack],
                  type: "引体向上", difficulty: 3,
                  maleVideo: "Wide-Grip-Pull-Up.mp4", femaleVideo: "Wide-Grip-Pull-Up.mp4"),
-        // MARK: shoulders (8)
+        // MARK: shoulders (11)
         Exercise("绳索前平举", "Cable Front Raise", category: .shoulders,
                  primaryMuscles: ["三角肌前束"], muscleGroups: [.frontDeltoids],
                  type: "前平举", difficulty: 2,
@@ -385,7 +412,19 @@ enum TrainingPlanData {
                  primaryMuscles: ["三角肌前束", "三角肌中束"], muscleGroups: [.frontDeltoids, .deltoids],
                  type: "肩上推举", difficulty: 2,
                  maleVideo: "Dumbbell Seated Shoulder Press.mp4", femaleVideo: "Dumbbell Seated Shoulder Press.mp4"),
-        // MARK: arms (8)
+        Exercise("俯卧 Y 字上举", "Prone Y Raise", category: .shoulders,
+                 primaryMuscles: ["三角肌后束", "斜方肌中下束"], muscleGroups: [.rearDeltoids, .trapezius],
+                 type: "反向飞鸟/上举", difficulty: 2,
+                 maleVideo: "Prone Y Raise.mp4", femaleVideo: "Prone Y Raise.mp4"),
+        Exercise("杠铃后三角划船", "Barbell Rear Delt Row", category: .shoulders,
+                 primaryMuscles: ["三角肌后束", "斜方肌中下束"], muscleGroups: [.rearDeltoids, .trapezius],
+                 type: "划船", difficulty: 3,
+                 maleVideo: "Barbell-Rear-Delt-Row.mp4", femaleVideo: "Barbell-Rear-Delt-Row.mp4"),
+        Exercise("阻力带外旋", "Resistance Band External Rotation", category: .shoulders,
+                 primaryMuscles: ["肩袖肌群"], muscleGroups: [.deltoids],
+                 type: "肩外旋/内收", difficulty: 2,
+                 maleVideo: "Resistance Band External Rotation.mp4", femaleVideo: "Resistance Band External Rotation.mp4"),
+        // MARK: arms (9)
         Exercise("杠铃弯举", "Barbell Curl", category: .arms,
                  primaryMuscles: ["肱二头肌"], muscleGroups: [.biceps],
                  type: "二头弯举", difficulty: 3,
@@ -418,7 +457,11 @@ enum TrainingPlanData {
                  primaryMuscles: ["肱三头肌"], muscleGroups: [.triceps],
                  type: "三头下压/伸展", difficulty: 2,
                  maleVideo: "Triceps Press.mp4", femaleVideo: "Triceps Press.mp4"),
-        // MARK: lower (21)
+        Exercise("手腕滚轮", "Wrist Roller", category: .arms,
+                 primaryMuscles: ["前臂屈伸肌群"], muscleGroups: [.forearm],
+                 type: "腕/手指/握力", difficulty: 3,
+                 maleVideo: "Wrist Roller.mp4", femaleVideo: "Wrist Roller.mp4"),
+        // MARK: lower (22)
         Exercise("徒手深蹲", "Air Squat", category: .lower,
                  primaryMuscles: ["股四头肌", "臀大肌"], muscleGroups: [.quadriceps, .gluteal],
                  type: "深蹲", difficulty: 3,
@@ -503,6 +546,10 @@ enum TrainingPlanData {
                  primaryMuscles: ["臀大肌", "腘绳肌"], muscleGroups: [.gluteal, .hamstring],
                  type: "硬拉/髋铰链", difficulty: 3,
                  maleVideo: "Trap-Bar-Deadlift.mp4", femaleVideo: "Trap-Bar-Deadlift.mp4"),
+        Exercise("怪兽走", "Monster Walk", category: .lower,
+                 primaryMuscles: ["臀中肌", "臀大肌"], muscleGroups: [.gluteal],
+                 type: "后踢/侧步", difficulty: 2,
+                 maleVideo: "Monster-Walk.mp4", femaleVideo: "Monster-Walk.mp4"),
         // MARK: functional (1)
         Exercise("农夫行走", "Farmers Walk", category: .functional,
                  primaryMuscles: ["前臂握力肌群", "核心稳定肌群"], muscleGroups: [.forearm, .abs],
