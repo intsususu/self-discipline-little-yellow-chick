@@ -120,6 +120,8 @@ final class AppState: ObservableObject {
         // 趋势页预热放后台：不阻塞撤下启动页，点开趋势页时各自命中缓存或补拉。
         // 回前台（refresh）需先清旧内存缓存再拉，避免命中昨天的值空转。
         Task { refresh ? await repository.refreshCachedData() : await repository.prewarm() }
+        // 已授权则（重新）注册 HealthKit 后台投递：运动结束后不开 App 也能自动打卡 + 刷新桌面组件。
+        startAutoCheckInObserverIfAuthorized()
         let remaining = minimumSplashDuration - Date().timeIntervalSince(start)
         if remaining > 0 {
             try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
@@ -178,6 +180,16 @@ final class AppState: ObservableObject {
         await loadInitialData()
         // 授权后预热：启动时（授权前）的预热只能拿到空结果，此处补齐各趋势页缓存。
         await repository.prewarm()
+        // 授权完成，开启后台投递（启动时若已授权也会在 startUp 中开启）。
+        startAutoCheckInObserverIfAuthorized()
+    }
+
+    /// 已完成 HealthKit 授权时，注册运动自动打卡的后台投递（仅真机；模拟器为纯 Mock）。
+    private func startAutoCheckInObserverIfAuthorized() {
+        #if !targetEnvironment(simulator)
+        guard userDefaults.bool(forKey: StorageKey.healthAuthorizationCompleted) else { return }
+        AutoCheckInObserver.shared.start()
+        #endif
     }
 
 

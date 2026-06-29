@@ -14,7 +14,7 @@ struct TrainingPlanView: View {
     @State private var weightKg: Double = 0
     @State private var presetsExpanded = false
 
-    private static let collapsedPresetCount = 2
+    private static let collapsedPresetCount = 1
 
     private static let allTypes = "全部"
     private static let topAnchor = "trainingPlanTop"

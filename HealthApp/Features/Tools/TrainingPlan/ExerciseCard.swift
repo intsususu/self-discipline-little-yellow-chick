@@ -129,9 +129,34 @@ struct ExerciseRow: View {
                 ExerciseTag(title: primary, foreground: accent, background: accent.opacity(0.10))
             }
             ExerciseTag(title: typeTag)
-            DifficultyDots(level: difficulty)
+            DifficultyChip(level: difficulty)
         }
         .padding(.top, 4)
+    }
+}
+
+// MARK: - 难度等级（文案 + 配色，全局统一）
+
+enum DifficultyScale {
+    /// 1–5 → 文案。
+    static func label(_ level: Int) -> String {
+        switch min(max(level, 1), 5) {
+        case 1:  return "入门"
+        case 2:  return "简单"
+        case 3:  return "中等"
+        case 4:  return "较难"
+        default: return "困难"
+        }
+    }
+
+    /// 1–5 → 配色（绿 → 橙 → 红 渐进）。
+    static func color(_ level: Int) -> Color {
+        switch min(max(level, 1), 5) {
+        case 1, 2: return Color(red: 0.20, green: 0.70, blue: 0.42)   // 绿
+        case 3:    return Color(red: 0.90, green: 0.67, blue: 0.00)   // 黄
+        case 4:    return Color(red: 0.95, green: 0.45, blue: 0.15)   // 深橙
+        default:   return Color(red: 0.88, green: 0.26, blue: 0.24)   // 红
+        }
     }
 }
 
@@ -145,34 +170,46 @@ struct ExerciseCard: View {
     }
 }
 
-/// 难度圆点：实心 ×level + 空心 ×(5-level)，压缩到 1–5。
-struct DifficultyDots: View {
+/// 难度胶囊（列表行用）：递增等级条 + 文字 + 等级配色，比等高圆点醒目易读。
+struct DifficultyChip: View {
     let level: Int
 
     var body: some View {
         let n = min(max(level, 1), 5)
-        HStack(spacing: 2) {
-            ForEach(0..<5, id: \.self) { i in
-                Circle()
-                    .fill(i < n ? Color.exerciseOrange : Color.exerciseOrange.opacity(0.22))
-                    .frame(width: 4.5, height: 4.5)
+        let color = DifficultyScale.color(n)
+        HStack(spacing: 4) {
+            HStack(alignment: .bottom, spacing: 1.5) {
+                ForEach(0..<5, id: \.self) { i in
+                    RoundedRectangle(cornerRadius: 1, style: .continuous)
+                        .fill(i < n ? color : color.opacity(0.22))
+                        .frame(width: 2.5, height: 4 + CGFloat(i) * 1.6)
+                }
             }
+            Text(DifficultyScale.label(n))
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(color)
         }
-        .accessibilityLabel(Text("难度 \(n)/5"))
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2.5)
+        .background(Capsule().fill(color.opacity(0.12)))
+        .accessibilityLabel(Text("难度 \(DifficultyScale.label(n)) \(n)/5"))
     }
 }
 
+/// 难度徽标（详情页用）：文字等级 + 数字，跟随等级配色。
 struct DifficultyBadge: View {
     let level: Int
-    var color: Color = .exerciseOrange
+    var color: Color? = nil
 
     var body: some View {
-        Text("难度 \(min(max(level, 1), 5))/5")
+        let n = min(max(level, 1), 5)
+        let tint = color ?? DifficultyScale.color(n)
+        Text("\(DifficultyScale.label(n)) · 难度 \(n)/5")
             .font(.system(size: 11, weight: .bold))
-            .foregroundColor(color)
+            .foregroundColor(tint)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
-            .background(color.opacity(0.10))
+            .background(tint.opacity(0.12))
             .clipShape(Capsule())
     }
 }

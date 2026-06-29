@@ -9,6 +9,7 @@ struct MoveDetailView: View {
     let video: String
     let difficulty: Int
     let metaPairs: [(String, String)]   // 目标 / 类型 等
+    let points: [String]                // 动作要点
     let hiitMove: HIITMove?             // 非空时展示热量预估
 
     @Environment(\.bodyWeightKg) private var weightKg
@@ -17,25 +18,28 @@ struct MoveDetailView: View {
     private var accent: Color { .exerciseOrange }
 
     init(name: String, nameEn: String, video: String, difficulty: Int,
-         metaPairs: [(String, String)], hiitMove: HIITMove? = nil) {
+         metaPairs: [(String, String)], points: [String] = [], hiitMove: HIITMove? = nil) {
         self.name = name
         self.nameEn = nameEn
         self.video = video
         self.difficulty = difficulty
         self.metaPairs = metaPairs
+        self.points = points
         self.hiitMove = hiitMove
     }
 
     init(stretch: StretchMove) {
         self.init(name: stretch.name, nameEn: stretch.nameEn, video: stretch.video,
                   difficulty: stretch.difficulty,
-                  metaPairs: [("部位", stretch.part.displayName), ("目标", stretch.target), ("类型", stretch.kind)])
+                  metaPairs: [("部位", stretch.part.displayName), ("目标", stretch.target), ("类型", stretch.kind)],
+                  points: stretch.points)
     }
 
     init(move: HIITMove) {
         self.init(name: move.name, nameEn: move.nameEn, video: move.video,
                   difficulty: move.difficulty,
                   metaPairs: [("类型", move.kind)],
+                  points: move.points,
                   hiitMove: move)
     }
 
@@ -44,6 +48,9 @@ struct MoveDetailView: View {
             VStack(spacing: 14) {
                 videoCard
                 titleCard
+                if !points.isEmpty {
+                    pointsCard
+                }
                 if let move = hiitMove, weightKg > 0 {
                     kcalCard(move)
                 }
@@ -98,7 +105,7 @@ struct MoveDetailView: View {
                             .foregroundColor(.textMuted)
                     }
                     Spacer(minLength: 0)
-                    DifficultyBadge(level: difficulty, color: accent)
+                    DifficultyBadge(level: difficulty)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -111,6 +118,31 @@ struct MoveDetailView: View {
                             Text(pair.1)
                                 .font(.system(size: 13, weight: .medium))
                                 .foregroundColor(.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var pointsCard: some View {
+        CardView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("动作要点")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.textPrimary)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(points, id: \.self) { point in
+                        HStack(alignment: .top, spacing: 8) {
+                            Circle()
+                                .fill(accent)
+                                .frame(width: 5, height: 5)
+                                .padding(.top, 7)
+                            Text(point)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }

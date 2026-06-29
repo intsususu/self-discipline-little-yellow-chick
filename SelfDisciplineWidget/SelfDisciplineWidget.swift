@@ -135,13 +135,18 @@ struct CheckInProvider: TimelineProvider {
         let date = resolvedDate()
         #if DEBUG
         if debugForcedMinutes != nil {
-            // 强制态：保持固定，不随真实时间翻面。
+            // 强制态：保持固定，不随真实时间翻面，也不查 HealthKit。
             completion(Timeline(entries: [entry(for: date)], policy: .never))
             return
         }
         #endif
-        let policy: TimelineReloadPolicy = .after(Self.nextBoundary(after: date))
-        completion(Timeline(entries: [entry(for: date)], policy: policy))
+        // 小组件自读 HealthKit：每次系统刷新时间线，先把达标运动日同步进共享存储，
+        // 这样「运动结束→不开 App」时，组件靠自身刷新即可反映自动打卡，不再卡在「必须打开 App」。
+        Task {
+            await AutoCheckInSyncer().sync()
+            let policy: TimelineReloadPolicy = .after(Self.nextBoundary(after: date))
+            completion(Timeline(entries: [entry(for: date)], policy: policy))
+        }
     }
 
     /// 三个时段所有起止点中，晚于 `date` 的最近一个时刻。

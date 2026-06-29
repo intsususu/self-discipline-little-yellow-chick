@@ -9,7 +9,7 @@ struct SelfDisciplineView: View {
     private let store = CheckInStore()
     private let calendar = SelfDisciplineSchedule.calendar
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 6), count: 7)
-    private let autoExerciseThresholdMinutes = 30
+    private let autoExerciseThresholdMinutes = AutoCheckIn.thresholdMinutes
 
     @State private var visibleMonth: Date
     @State private var selectedDay: Date

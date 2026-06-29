@@ -13,7 +13,6 @@ struct ProfileView: View {
     @State private var showsEventTimeline = false
     @State private var showsAbout = false
     @State private var showsHealthImport = false
-    @State private var showsFoodCalorie = false
     @State private var showsNutrientTier = false
     @State private var showsTrainingPlan = false
     @State private var currentWeight: Double?
@@ -87,9 +86,6 @@ struct ProfileView: View {
             .navigationDestination(isPresented: $showsHealthImport) {
                 // 管理页：可经系统返回按钮与左缘右滑返回；再次点击连接按钮跳转系统设置管理权限。
                 ImportView(isOnboarding: false)
-            }
-            .navigationDestination(isPresented: $showsFoodCalorie) {
-                FoodCalorieView()
             }
             .navigationDestination(isPresented: $showsNutrientTier) {
                 NutrientTierView()
@@ -217,16 +213,12 @@ struct ProfileView: View {
 
     private var toolsSettings: some View {
         settingsGroup(title: "小工具") {
-            settingRow(icon: "fork.knife", title: "食品热量表", value: "查询 ›", tint: .exerciseOrange) {
-                showsFoodCalorie = true
+            settingRow(icon: "figure.strengthtraining.traditional", title: "训练计划", value: "查看 ›", tint: .brandBlue) {
+                showsTrainingPlan = true
             }
             settingDivider
             settingRow(icon: "list.bullet.rectangle.portrait", title: "营养素红黑榜", value: "夯→拉 ›", tint: .successGreen) {
                 showsNutrientTier = true
-            }
-            settingDivider
-            settingRow(icon: "figure.strengthtraining.traditional", title: "训练计划", value: "查看 ›", tint: .brandBlue) {
-                showsTrainingPlan = true
             }
             settingDivider
             settingRow(icon: "checkmark.seal.fill", title: "自律打卡", value: "打卡 ›", tint: .successGreen) {

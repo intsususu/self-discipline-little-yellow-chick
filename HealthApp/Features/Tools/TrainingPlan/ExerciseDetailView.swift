@@ -32,10 +32,10 @@ struct ExerciseDetailView: View {
             VStack(spacing: 14) {
                 mediaCard
                 titleCard
-                muscleMapCard
                 if !exercise.points.isEmpty {
                     pointsCard
                 }
+                muscleMapCard
                 disclaimer
             }
             .padding(.horizontal, 16)
@@ -47,19 +47,29 @@ struct ExerciseDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    /// 演示图（Assets 中以英文名命名）。有图则展示动作示意图，否则降级为视频占位。
+    /// 演示图（Assets 中以英文名命名）。有图则按图片真实比例铺满外框尽量大展示，否则降级为视频占位。
+    @ViewBuilder
     private var mediaCard: some View {
-        ZStack {
-            if let illustration = UIImage(named: exercise.image) {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.cardBg)
-
-                Image(uiImage: illustration)
-                    .resizable()
-                    .scaledToFit()
-                    .padding(14)
-            } else {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+        if let illustration = UIImage(named: exercise.image) {
+            Image(uiImage: illustration)
+                .resizable()
+                .aspectRatio(illustration.size, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.cardBg)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.hairline, lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 4)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(Text("\(exercise.name) 动作示意图"))
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(Color.textPrimary)
 
                 VStack(spacing: 10) {
@@ -79,15 +89,11 @@ struct ExerciseDetailView: View {
                 }
                 .padding(18)
             }
+            .aspectRatio(16.0 / 10.0, contentMode: .fit)
+            .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 4)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(selectedVideo.isEmpty ? "演示视频待补充" : "演示视频占位"))
         }
-        .aspectRatio(16.0 / 10.0, contentMode: .fit)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.hairline, lineWidth: exercise.hasImage ? 1 : 0)
-        )
-        .shadow(color: Color.black.opacity(0.10), radius: 12, x: 0, y: 4)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text(exercise.hasImage ? "\(exercise.name) 动作示意图" : (selectedVideo.isEmpty ? "演示视频待补充" : "演示视频占位")))
     }
 
     private var titleCard: some View {
@@ -106,7 +112,7 @@ struct ExerciseDetailView: View {
 
                     Spacer(minLength: 0)
 
-                    DifficultyBadge(level: exercise.difficulty, color: accent)
+                    DifficultyBadge(level: exercise.difficulty)
                 }
 
                 HStack(spacing: 6) {
